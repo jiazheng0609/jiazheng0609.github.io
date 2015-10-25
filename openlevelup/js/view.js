@@ -371,9 +371,9 @@ var MapView = function(main) {
 	
 	//Get URL values to restore
 	var url = this._mainView.getUrlView();
-	var lat = (url.getLatitude() != undefined) ? url.getLatitude() : 47;
-	var lon = (url.getLongitude() != undefined) ? url.getLongitude() : 2;
-	var zoom = (url.getZoom() != undefined) ? url.getZoom() : 6;
+	var lat = (url.getLatitude() != undefined) ? url.getLatitude() : 23.97565;
+	var lon = (url.getLongitude() != undefined) ? url.getLongitude() : 120.973882;
+	var zoom = (url.getZoom() != undefined) ? url.getZoom() : 8;
 	var bbox = url.getBBox();
 	var tiles = url.getTiles();
 	
