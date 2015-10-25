@@ -65,6 +65,6 @@
 			"attribution": "衛星影像製作：<a href=\"http://www.csrsr.ncu.edu.tw\">國立中央大學太空及遙測研究中心</a>",
 			"minZoom": 6,
 			"maxZoom": 17
-		},
+		}
 	]
 }
