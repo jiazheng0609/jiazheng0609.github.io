@@ -1,0 +1,836 @@
+{
+	"styles": {
+		
+		"buildingpart|indoor|room": [
+			{
+				"name": "房間",
+				"description": "室內房間",
+				"onTags": [ { "indoor": "room" }, { "buildingpart": "room" } ],
+				"style": { "color": "#AAAAAA", "opacity": 1, "weight": 2.5, "fillColor": "#E0E0E0", "fillOpacity": 1, "layer": -5, "popup": "yes" }
+			},
+			{
+				"name": "牆",
+				"description": "室內牆",
+				"onTags": [ { "indoor": "wall" }, { "buildingpart": "wall" } ],
+				"style": { "color": "#999999", "opacity": 1, "weight": 2.5, "fillColor": "#999999", "fillOpacity": 1, "popup": "yes", "layer": -2 }
+			},
+			{
+				"name": "區域",
+				"description": "室內區域",
+				"onTags": [ { "indoor": "area|corridor" }, { "buildingpart": "corridor|hall" }, { "room": "corridor|entrance|hall|entry|gallery|collection" } ],
+				"style": { "color": "#AAAAAA", "opacity": 1, "weight": 0.8, "fillColor": "#EEEEEE", "fillOpacity": 1, "layer": -6, "label": "name", "labelStyle": "area" }
+			},
+			{
+				"name": "${room}",
+				"description": "房間",
+				"onTags": [ { "room": "*" } ],
+				"style": {
+					"icon": "room_${room}.png",
+					"iconAlias": { "amphitheatre": "auditorium", "reception": "administration", "refectory": "restaurant", "checkroom": "locker" },
+					"showMissingIcon": false
+				}
+			},
+			{
+				"name": "垂直通道",
+				"description": "電梯、樓梯(多邊形)",
+				"onTags": [ { "buildingpart": "verticalpassage" }, { "room": "stairs|escalator" }, { "indoor": "elevator" }, { "stairs": "yes" } ],
+				"style": { "color": "#7495DA", "fillColor": "#AEBDDA", "opacity": 1, "fillOpacity": 1, "weight": 1, "levelup": true, "layer": -1 }
+			},
+			{
+				"name": "電梯",
+				"description": "電梯",
+				"onTags": [ { "buildingpart:verticalpassage": "elevator" }, { "indoor": "elevator" } ],
+				"style": { "icon": "passage_elevator.png" }
+			},
+			{
+				"name": "樓梯",
+				"description": "樓梯(垂直通道)",
+				"onTags": [ { "buildingpart:verticalpassage": "stairway" }, { "room": "stairs" }, { "stairs": "yes" } ],
+				"style": { "icon": "passage_stairs.png" }
+			},
+			{
+				"name": "手扶梯",
+				"description": "手扶梯(垂直通道)",
+				"onTags": [ { "buildingpart:verticalpassage": "escalator" }, { "room": "escalator" } ],
+				"style": { "icon": "passage_escalator.png" }
+			},
+			{
+				"name": "緊急樓梯",
+				"description": "僅供緊急用途的樓梯(多邊形)",
+				"onTags": [ { "buildingpart": "verticalpassage", "access": "emergency" }, { "room": "stairs", "access": "emergency" }, { "stairs": "yes", "access": "emergency" } ],
+				"style": { "color": "#009262", "fillColor": "#C0FFCB", "icon": "emergency_stairs.png" }
+			},
+			{
+				"name": "柱子",
+				"description": "柱子",
+				"onTags": [ { "indoor": "column" } ],
+				"style": { "color": "#656565", "opacity": 1, "weight": 2.5, "lineCap": "butt", "fillColor": "#656565", "fillOpacity": 1, "radius": 4, "layer": 0 }
+			},
+			{
+				"name": "玻璃櫃",
+				"description": "玻璃櫃",
+				"onTags": [ { "indoor": "glass_cabinet" } ],
+				"isDetail": true,
+				"style": { "color": "#A2CCC8", "fillColor": "#E3F3F5", "opacity": 1, "fillOpacity": 1, "lineJoin": "miter", "weight": 2, "layer": -1 }
+			},
+			{
+				"name": "門",
+				"description": "普通門",
+				"onTags": [ { "buildingpart": "door" }, { "indoor": "door" } ],
+				"isDetail": true,
+				"style": { "icon": "door.png", "color": "#888888", "opacity": 1, "weight": 2, "lineCap": "butt", "dashArray": "5,5" }
+			},
+			{
+				"name": "${laboratory} 實驗室",
+				"description": "實驗室",
+				"onTags": [ { "laboratory": "*" } ],
+				"style": {
+					"icon": "laboratory_${laboratory}.png",
+					"iconAlias": { "biological": "biology", "physical": "physics", "electronic": "electronics" }
+				}
+			},
+			{
+				"name": "限制區域",
+				"description": "限定某些人才能使用的區域或房間",
+				"onTags": [ { "indoor": "room|area|corridor", "access": "private|no" }, { "buildingpart": "verticalpassage|hall|room|area|corridor", "access": "private|no" }, { "room": "technical" } ],
+				"style": { "fillColor": "#A2A2A2" }
+			}
+		],
+		
+		"door|entrance": [
+			{
+				"name": "門",
+				"description": "普通門",
+				"onTags": [ { "door": "*" }, { "entrance": "*" } ],
+				"style": { "icon": "door.png", "color": "#888888", "opacity": 1, "weight": 2, "lineCap": "butt", "dashArray": "5,5" },
+				"isDetail": true
+			},
+			{
+				"name": "通道",
+				"description": "door=no 的點",
+				"onTags": [ { "door": "no" } ],
+				"style": { "color": "#0BB848", "fillColor": "#0BB848", "opacity": 1, "fillOpacity": 1, "radius": 3, "icon": "none", "showMissingIcon": false, "dashArray": "none" }
+			},
+			{
+				"name": "拉門",
+				"description": "Door=sliding 的點",
+				"onTags": [ { "door": "sliding" } ],
+				"style": { "icon": "door_sliding.png" }
+			},
+			{
+				"name": "${entrance} (入口)",
+				"description": "入口",
+				"onTags": [ { "entrance": "service|emergency|exit|main" } ],
+				"style": { "icon": "entrance_${entrance}.png" }
+			}
+		],
+		
+		"highway": [
+			{
+				"name": "路徑",
+				"description": "道路 (預設)",
+				"onTags": [ { "highway": "*" } ],
+				"style": { "color": "#F98072", "opacity": 0.2 }
+			},
+			{
+				"name": "路徑 (有導盲磚)",
+				"description": "有導盲磚的路徑",
+				"onTags": [ { "highway": "*", "guide_strips": "yes" } ],
+				"style": { "color": "#316EDD", "icon": "guide_strips.png" }
+			},
+			{
+				"name": "區域",
+				"description": "行人徒步區",
+				"onTags": [ { "highway": "pedestrian|footway", "area": "yes" } ],
+				"style": { "color": "#AAAAAA", "opacity": 1, "weight": 0.8, "fillColor": "#EEEEEE", "fillOpacity": 1, "layer": -6, "label": "name", "labelStyle": "area" }
+			},
+			{
+				"name": "公車站牌",
+				"description": "公車站牌",
+				"onTags": [ { "highway": "bus_stop" } ],
+				"style": { "icon": "highway_bus_stop.png" }
+			},
+			{
+				"name": "階梯",
+				"description": "階梯",
+				"onTags": [ { "highway": "steps" } ],
+				"style": { "color": "#F98072", "opacity": 1, "weight": 10, "lineCap": "butt", "dashArray": "2,1", "levelup": true, "level": -1 }
+			},
+			{
+				"name": "電動步道",
+				"description": "電動步道",
+				"onTags": [ { "conveying": "yes|forward|backward|reversible" } ],
+				"style": { "color": "#848484", "opacity": 1, "weight": 10, "lineCap": "butt", "dashArray": "3,1", "levelup": true }
+			},
+			{
+				"description": "電動步道",
+				"onTags": [ { "highway": "footway", "conveying": "yes|forward|backward|reversible" } ],
+				"style": { "dashArray": "3,2" }
+			},
+			{
+				"name": "垂直通道",
+				"description": "電梯、樓梯",
+				"onTags": [ { "highway": "elevator|lift" }, { "highway": "steps", "area": "yes" } ],
+				"style": { "color": "#7495DA", "fillColor": "#AEBDDA", "opacity": 1, "fillOpacity": 1, "weight": 1, "levelup": true, "layer": -1, "dashArray": "null" }
+			},
+			{
+				"name": "電梯",
+				"description": "電梯",
+				"onTags": [ { "highway": "elevator|lift" } ],
+				"style": { "icon": "passage_elevator.png" }
+			},
+			{
+				"name": "樓梯",
+				"description": "樓梯 (垂直通道)",
+				"onTags": [ { "area": "yes", "highway": "steps" } ],
+				"style": { "icon": "passage_stairs.png" }
+			},
+			{
+				"name": "電動扶梯",
+				"description": "電動扶梯 (垂直通道)",
+				"onTags": [ { "area": "yes", "conveying": "yes|forward|backward|reversible" } ],
+				"style": { "icon": "passage_escalator.png" }
+			},
+			{
+				"description": "單行道",
+				"onTags": [ { "oneway": "yes" }, { "conveying": "forward" } ],
+				"style": { "icon": "arrow_up_1.png", "rotateIcon": true }
+			},
+			{
+				"description": "單行道",
+				"onTags": [ { "oneway": "-1" }, { "conveying": "backward" } ],
+				"style": { "icon": "arrow_down_1.png", "rotateIcon": true }
+			}
+		],
+		
+		
+		
+		"amenity": [
+			{
+				"name": "${amenity} (amenity)",
+				"description": "設施",
+				"onTags": [ { "amenity": "*" } ],
+				"style": { "color": "#AAAAAA", "fillColor": "#FFDAAD", "icon": "amenity_${amenity}.png", "label": "name", "labelStyle": "amenity" }
+			},
+			{
+				"description": "小設施",
+				"onTags": [ { "amenity": "bbq|drinking_water|atm|bench|clock|photo_booth|post_box|recycling|vending_machine|waste_basket|ticket_validator|piano|telephone" } ],
+				"isDetail": true
+			},
+			{
+				"description": "設施的土地利用圖層",
+				"onTags": [ { "amenity": "school|college|university|hospital" } ],
+				"style": { "layer": -9 }
+			},
+			{
+				"name": "${vending} (自動販賣機)",
+				"description": "自動販賣機",
+				"onTags": [ { "vending": "*" } ],
+				"isDetail": true,
+				"style": {
+					"icon": "vending_${vending}.png",
+					"iconAlias": { "news_papers": "newspapers" }
+				}
+			},
+			{
+				"name": "廁所 (女性)",
+				"description": "女性廁所",
+				"onTags": [ { "amenity": "toilets", "female": "yes|only|designated" } ],
+				"style": { "icon": "amenity_toilets_women.png" }
+			},
+			{
+				"name": "廁所 (男性)",
+				"description": "男性廁所",
+				"onTags": [ { "amenity": "toilets", "male": "yes|only|designated" } ],
+				"style": { "icon": "amenity_toilets_men.png" }
+			},
+			{
+				"name": "廁所",
+				"description": "廁所",
+				"onTags": [ { "amenity": "toilets", "female": "yes", "male": "yes" } ],
+				"style": { "icon": "amenity_toilets.png" }
+			},
+			{
+				"name": "廁所 (無障礙)",
+				"description": "無障礙廁所",
+				"onTags": [ { "amenity": "toilets", "wheelchair": "yes|only|designated" } ],
+				"style": { "icon": "amenity_toilets_disabled.png" }
+			},
+			{
+				"name": "Stand-up bench",
+				"description": "Stand-up bench icon",
+				"onTags": [ { "bench:type": "stand_up" } ],
+				"style": { "icon": "bench_type_stand_up.png" }
+			}
+		],
+		
+		"barrier": [
+			{
+				"name": "${barrier} (障礙物)",
+				"description": "障礙物圖示",
+				"onTags": [ { "barrier": "*" } ],
+				"style": { "icon": "barrier_${barrier}.png", "opacity": 1, "weight": 2, "lineCap": "butt", "showMissingIcon": false }
+			},
+			{
+				"name": "柵欄",
+				"description": "柵欄",
+				"onTags": [ { "barrier": "fence" } ],
+				"style": { "color": "#5B5B5B", "icon": "none" }
+			},
+			{
+				"name": "綠圍籬",
+				"description": "植物做的圍籬",
+				"onTags": [ { "barrier": "hedge" } ],
+				"style": { "color": "#8CD16E", "icon": "none" }
+			}
+		],
+		
+		"amenity|public_transport|room": [
+			{
+				"description": "舒適設施",
+				"onTags": [ { "amenity": "toilets" }, { "public_transport": "waiting_area" }, { "room": "waiting" } ],
+				"style": { "fillColor": "#E3C8E3" }
+			}
+		],
+		
+		
+		"emergency": [
+			{
+				"name": "${emergency}",
+				"description": "緊急",
+				"isDetail": true,
+				"onTags": [ { "emergency": "*" } ],
+				"style": { "icon": "emergency_${emergency}.png" }
+			}
+		],
+		
+		"man_made": [
+			{
+				"name": "柱子",
+				"description": "柱子",
+				"onTags": [ { "man_made": "pillar" } ],
+				"style": { "color": "#656565", "opacity": 1, "weight": 2.5, "lineCap": "butt", "fillColor": "#656565", "fillOpacity": 1, "radius": 4, "layer": 0 }
+			},
+			{
+				"name": "監視器",
+				"description": "監視器",
+				"onTags": [ { "man_made": "surveillance" } ],
+				"isDetail": true,
+				"style": { "icon": "man_made_surveillance.png" }
+			},
+			{
+				"name": "燈",
+				"description": "燈",
+				"onTags": [ { "man_made": "lamp|street_lamp" } ],
+				"isDetail": true,
+				"style": { "icon": "man_made_lamp.png" }
+			}
+		],
+		
+		"railway|public_transport": [
+			{
+				"name": "${railway} (鐵路)",
+				"description": "Rail",
+				"onTags": [ { "railway": "rail|subway|light_rail|monorail|narrow_gauge|tram" } ],
+				"style": { "color": "#888888", "opacity": 1, "weight": 10, "lineCap": "butt", "dashArray": "5,5", "label": "name", "labelStyle": "railway" }
+			},
+			{
+				"name": "月台",
+				"description": "鐵路月台",
+				"onTags": [ { "railway": "platform" }, { "public_transport": "platform" } ],
+				"style": { "color": "#B4ADB3", "opacity": 1, "weight": 1, "fillColor": "#BABABA", "fillOpacity": 1, "layer": -8 }
+			},
+			{
+				"name": "${railway}",
+				"description": "鐵路圖示",
+				"onTags": [ { "railway": "platform|subway_entrance|buffer_stop" } ],
+				"style": { "icon": "railway_${railway}.png" }
+			}
+		],
+		
+		"shop": [
+			{
+				"name": "${shop} (shop)",
+				"description": "商店",
+				"onTags": [ { "shop": "*" } ],
+				"style": { "color": "#AAAAAA", "fillColor": "#FFDAAD", "icon": "shopping_${shop}.png", "label": "name", "labelStyle": "shop" }
+			},
+			{
+				"name": "商場",
+				"description": "商場用地",
+				"onTags": [ { "shop": "mall" } ],
+				"style" : { "color": "#AAAAAA", "opacity": 1, "weight": 0.8, "fillColor": "#EEEEEE", "fillOpacity": 1, "layer": -9 }
+			}
+		],
+		
+		"tourism": [
+			{
+				"name": "${tourism} (tourism)",
+				"description": "觀光圖示",
+				"onTags": [ { "tourism": "*" } ],
+				"style": { "icon": "tourism_${tourism}.png", "fillColor": "#FFF6AD", "opacity": 1, "fillOpacity": 1, "label": "name", "labelStyle": "tourism" }
+			},
+			{
+				"name": "${information} (旅遊資訊)",
+				"description": "旅遊資訊圖示",
+				"onTags": [ { "information": "*" } ],
+				"isDetail": true,
+				"style": { "icon": "information_${information}.png" }
+			},
+			{
+				"description": "旅遊服務中心",
+				"onTags": [ { "information": "office" } ],
+				"isDetail": false
+			},
+			{
+				"name": "街道地圖",
+				"description": "地圖",
+				"onTags": [ { "map_type": "street|scheme" } ],
+				"style": { "icon": "map_type_${map_type}.png" }
+			},
+			{
+				"name": "${artwork_type} (藝術品)",
+				"description": "藝術品圖示",
+				"onTags": [ { "artwork_type": "sculpture|statue|stone|bust|mural" } ],
+				"style": {
+					"icon": "artwork_type_${artwork_type}.png",
+					"iconAlias": { "sculpture": "statue", "stone": "statue", "bust": "statue" }
+				}
+			}
+		],
+
+		
+		
+		"advertising": [
+			{
+				"name": "${advertising}",
+				"description": "廣告圖示",
+				"onTags": [ { "advertising": "*" } ],
+				"isDetail": true,
+				"style": {
+					"icon": "pub_${advertising}.png",
+					"iconAlias": { "sign": "poster_box", "wall_painting": "poster_box" }
+				}
+			}
+		],
+		
+		"aeroway": [
+			{
+				"name": "${aeroway}",
+				"description": "機場相關圖示",
+				"onTags": [ { "aeroway": "*" } ],
+				"style": { "icon": "aeroway_${aeroway}.png" }
+			}
+		],
+		
+		"historic": [
+			{
+				"name": "歷史文物",
+				"description": "歷史文物",
+				"onTags": [ { "historic": "*" } ],
+				"isDetail": true,
+				"style": { "color": "#C0B0A2", "opacity": 0.5, "weight": 0.5, "fillColor": "#C0B0A2", "fillOpacity": 0.5, "layer": -1 }
+			},
+			{
+				"name": "墳墓",
+				"description": "墳墓",
+				"onTags": [ { "historic": "tomb" } ],
+				"style": { "icon": "historic_tomb.png" }
+			}
+		],
+		
+		"landuse": [
+			{
+				"name": "草地",
+				"description": "草地",
+				"onTags": [ { "landuse": "grass" } ],
+				"style": { "opacity": 0, "weight": 0, "fillColor": "#CFECA8", "fillOpacity": 1, "layer": -1 }
+			}
+		],
+		
+		"pole": [
+			{
+				"name": "地標",
+				"description": "地標指示牌",
+				"onTags": [ { "pole": "landmark_sign" } ],
+				"isDetail": true,
+				"style": { "icon": "pole_landmark_sign.png", "label": "ref" }
+			}
+		],
+		
+		"power": [
+			{
+				"name": "發電自行車",
+				"description": "發電自行車圖示",
+				"onTags": [ { "generator:type": "bicycle" } ],
+				"isDetail": true,
+				"style": { "icon": "generator_type_bicycle.png" }
+			}
+		],
+		
+		
+		"building|building:part": [
+			{
+				"name": "建築物",
+				"description": "建築物",
+				"onTags": [ { "building": "*" }, { "building:part": "floor" } ],
+				"style": { "color": "#ADA5A5", "opacity": 1, "weight": 1, "fillColor": "#D4CACA", "fillOpacity": 1, "layer": -10, "popup": "yes" }
+			},
+			{
+				"name": "柱子",
+				"description": "柱子",
+				"onTags": [ { "building:part": "column" } ],
+				"style": { "color": "#656565", "opacity": 1, "weight": 2.5, "lineCap": "butt", "fillColor": "#656565", "fillOpacity": 1, "radius": 4, "layer": 0 }
+			}
+		]
+	},
+	
+	"details": {
+		"access": {
+			"name": "限制",
+			"values": "icons",
+			"icons": "access_${v}.png",
+			"iconsAlias": { "private": "no" }
+		},
+		"architect": {
+			"name": "設計者",
+			"values": "text"
+		},
+		"artist": {
+			"name": "藝術家",
+			"values": "text"
+		},
+		"artist_name": {
+			"name": "藝術家",
+			"values": "text"
+		},
+		"bicycle": {
+			"img": "icon_bicycle.svg",
+			"values": "icons",
+			"icons": "icon_status_${v}.png",
+			"iconsAlias": { "private": "no", "designated": "yes" }
+		},
+		"capacity": {
+			"name": "容量",
+			"values": "text"
+		},
+		"contact:email": {
+			"name": "@",
+			"values": "link",
+			"link": "mailto:${v}"
+		},
+		"contact:phone": {
+			"img": "icon_phone.svg",
+			"values": "text"
+		},
+		"contact:website": {
+			"img": "icon_web.svg",
+			"values": "link"
+		},
+		"cuisine": {
+			"img": "icon_cuisine.png",
+			"values": "text"
+		},
+		"description": {
+			"name": "描述",
+			"values": "text"
+		},
+		"direction": {
+			"img": "icon_compass.svg",
+			"values": "direction"
+		},
+		"email": {
+			"name": "@",
+			"values": "link",
+			"link": "mailto:${v}"
+		},
+		"fee": {
+			"img": "access_customers.png",
+			"values": "text"
+		},
+		"female": {
+			"img": "icon_female.svg",
+			"values": "icons",
+			"icons": "icon_status_${v}.png"
+		},
+		"foot": {
+			"img": "icon_walk.svg",
+			"values": "icons",
+			"icons": "icon_status_${v}.png",
+			"iconsAlias": { "private": "no", "designated": "yes" }
+		},
+		"height": {
+			"img": "icon_height.svg",
+			"values": "measure",
+			"unit": "m"
+		},
+		"length": {
+			"img": "icon_length.svg",
+			"values": "measure",
+			"unit": "m"
+		},
+		"male": {
+			"img": "icon_male.svg",
+			"values": "icons",
+			"icons": "icon_status_${v}.png"
+		},
+		"material": {
+			"name": "材質",
+			"values": "icons",
+			"icons": "material_${v}.png",
+			"iconsAlias": { "steel": "metal", "reinforced_concrete": "concrete" }
+		},
+		"opening_hours": {
+			"img": "icon_clock.svg",
+			"values": "hours"
+		},
+		"operator": {
+			"name": "經營者",
+			"values": "text"
+		},
+		"phone": {
+			"img": "icon_phone.svg",
+			"values": "text"
+		},
+		"seats": {
+			"img": "icon_seats.svg",
+			"values": "text"
+		},
+		"stairs:orientation": {
+			"img": "icon_compass.svg",
+			"values": "text"
+		},
+		"website": {
+			"img": "icon_web.svg",
+			"values": "link"
+		},
+		"wheelchair": {
+			"img": "icon_wheelchair.svg",
+			"values": "icons",
+			"icons": "icon_status_${v}.png"
+		},
+		"width": {
+			"img": "icon_width.svg",
+			"values": "measure",
+			"unit": "m"
+		}
+	},
+
+	"images": [
+		"access_customers.png",
+		"access_no.png",
+		"access_yes.png",
+		"aeroway_aerodrome.png",
+		"aeroway_airport.png",
+		"aeroway_gate.png",
+		"aeroway_helipad.png",
+		"aeroway_terminal.png",
+		"amenity_atm.png",
+		"amenity_bank.png",
+		"amenity_bar.png",
+		"amenity_bench.png",
+		"amenity_bicycle_parking.png",
+		"amenity_bicycle_rental.png",
+		"amenity_bureau_de_change.png",
+		"amenity_bus_station.png",
+		"amenity_cafe.png",
+		"amenity_car_rental.png",
+		"amenity_car_sharing.png",
+		"amenity_casino.png",
+		"amenity_cinema.png",
+		"amenity_clock.png",
+		"amenity_college.png",
+		"amenity_court.png",
+		"amenity_dentist.png",
+		"amenity_doctors.png",
+		"amenity_drinking_water.png",
+		"amenity_fast_food.png",
+		"amenity_firestation.png",
+		"amenity_fountain.png",
+		"amenity_hospital.png",
+		"amenity_ice_cream.png",
+		"amenity_library.png",
+		"amenity_luggage_locker.png",
+		"amenity_marketplace.png",
+		"amenity_nursery.png",
+		"amenity_parking.png",
+		"amenity_pharmacy.png",
+		"amenity_photo_booth.png",
+		"amenity_piano.png",
+		"amenity_place_of_worship.png",
+		"amenity_playground.png",
+		"amenity_police.png",
+		"amenity_post_box.png",
+		"amenity_post_office.png",
+		"amenity_prison.png",
+		"amenity_public_building.png",
+		"amenity_pub.png",
+		"amenity_recycling.png",
+		"amenity_restaurant.png",
+		"amenity_school.png",
+		"amenity_shelter.png",
+		"amenity_taxi.png",
+		"amenity_telephone.png",
+		"amenity_theatre.png",
+		"amenity_ticket_validator.png",
+		"amenity_toilets_disabled.png",
+		"amenity_toilets_men.png",
+		"amenity_toilets.png",
+		"amenity_toilets_women.png",
+		"amenity_townhall.png",
+		"amenity_university.png",
+		"amenity_vending_machine.png",
+		"amenity_veterinary.png",
+		"amenity_waste_basket.png",
+		"arrow_down_1.png",
+		"arrow_down_2.png",
+		"arrow_down_3.png",
+		"arrow_up_1.png",
+		"arrow_up_2.png",
+		"arrow_up_3.png",
+		"artwork_type_statue.png",
+		"artwork_type_mural.png",
+		"barrier_blocks.png",
+		"barrier_bollard.png",
+		"barrier_cattle_grid.png",
+		"barrier_cycle_barrier.png",
+		"barrier_entrance.png",
+		"barrier_exit.png",
+		"barrier_gate.png",
+		"barrier_kissing_gate.png",
+		"barrier_lift_gate.png",
+		"barrier_steps.png",
+		"barrier_stile.png",
+		"barrier_toll_booth.png",
+		"barrier_turnstile.png",
+		"bench_type_stand_up.png",
+		"door_no.png",
+		"door_sliding.png",
+		"door.png",
+		"emergency_assembly_point.png",
+		"emergency_defibrillator.png",
+		"emergency_fire_extinguisher.png",
+		"emergency_fire_hydrant.png",
+		"emergency_phone.png",
+		"emergency_siren.png",
+		"emergency_stairs.png",
+		"emergency_stop_button.png",
+		"entrance_emergency.png",
+		"entrance_exit.png",
+		"entrance_main.png",
+		"entrance_service.png",
+		"generator_type_bicycle.png",
+		"guide_strips.png",
+		"highway_bus_stop.png",
+		"historic_tomb.png",
+		"icon_status_limited.png",
+		"icon_status_no.png",
+		"icon_status_yes.png",
+		"information_audioguide.png",
+		"information_guidepost.png",
+		"information_map.png",
+		"laboratory_biology.png",
+		"laboratory_computer.png",
+		"laboratory_electronics.png",
+		"laboratory_physics.png",
+		"man_made_lamp.png",
+		"man_made_surveillance.png",
+		"man_made_survey_point.png",
+		"map_type_scheme.png",
+		"map_type_street.png",
+		"material_concrete.png",
+		"material_metal.png",
+		"material_plastic.png",
+		"material_stone.png",
+		"material_wood.png",
+		"passage_elevator.png",
+		"passage_escalator.png",
+		"passage_stairs.png",
+		"pole_landmark_sign.png",
+		"pub_billboard.png",
+		"pub_flag.png",
+		"pub_poster_box.png",
+		"pub_screen.png",
+		"railway_buffer_stop.png",
+		"railway_platform.png",
+		"railway_subway_entrance.png",
+		"room_administration.png",
+		"room_auditorium.png",
+		"room_bedroom.png",
+		"room_chapel.png",
+		"room_class.png",
+		"room_computer.png",
+		"room_conference.png",
+		"room_crypt.png",
+		"room_kitchen.png",
+		"room_laboratory.png",
+		"room_library.png",
+		"room_locker.png",
+		"room_nursery.png",
+		"room_office.png",
+		"room_prison_cell.png",
+		"room_restaurant.png",
+		"room_security_check.png",
+		"room_sport.png",
+		"room_storage.png",
+		"room_technical.png",
+		"room_toilets.png",
+		"room_toilet.png",
+		"room_waiting.png",
+		"shopping_alcohol.png",
+		"shopping_bakery.png",
+		"shopping_bicycle.png",
+		"shopping_books.png",
+		"shopping_butcher.png",
+		"shopping_car.png",
+		"shopping_car_repair.png",
+		"shopping_clothes.png",
+		"shopping_computer.png",
+		"shopping_confectionery.png",
+		"shopping_convenience.png",
+		"shopping_copyshop.png",
+		"shopping_department_store.png",
+		"shopping_diy.png",
+		"shopping_estateagent.png",
+		"shopping_fish.png",
+		"shopping_florist.png",
+		"shopping_garden_centre.png",
+		"shopping_gift.png",
+		"shopping_greengrocer.png",
+		"shopping_hairdresser.png",
+		"shopping_hearing_aids.png",
+		"shopping_hifi.png",
+		"shopping_jewelry.png",
+		"shopping_kiosk.png",
+		"shopping_laundrette.png",
+		"shopping_mobile_phone.png",
+		"shopping_motorcycle.png",
+		"shopping_music.png",
+		"shopping_newsagent.png",
+		"shopping_optician.png",
+		"shopping_pet.png",
+		"shopping_photo.png",
+		"shopping_supermarket.png",
+		"shopping_tackle.png",
+		"shopping_tobacco.png",
+		"shopping_toys.png",
+		"shopping_video_rental.png",
+		"tourism_artwork.png",
+		"tourism_attraction.png",
+		"tourism_bed_and_breakfast.png",
+		"tourism_camping.png",
+		"tourism_caravan_site.png",
+		"tourism_chalet.png",
+		"tourism_gallery.png",
+		"tourism_hostel.png",
+		"tourism_hotel.png",
+		"tourism_information.png",
+		"tourism_motel.png",
+		"tourism_museum.png",
+		"tourism_picnic_site.png",
+		"tourism_viewpoint.png",
+		"tourism_zoo.png",
+		"vending_newspapers.png",
+		"vending_public_transport_tickets.png"
+	]
+}
