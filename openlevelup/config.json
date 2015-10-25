@@ -52,33 +52,19 @@
 			"maxZoom": 19
 		},
 		{
-			"name": "OpenStreetMap FR",
-			"URL": "http://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png",
-			"attribution": "Tiles <a href=\"http://tile.openstreetmap.fr/\">OSMFR</a>",
-			"minZoom": 1,
-			"maxZoom": 20
-		},
-		{
-			"name": "Stamen Toner",
-			"URL": "http://{s}.tile.stamen.com/toner/{z}/{x}/{y}.png",
-			"attribution": "Tiles <a href=\"http://maps.stamen.com/\">Stamen Toner</a>",
-			"minZoom": 1,
-			"maxZoom": 20
-		},
-		{
-			"name": "Cadastre FR",
-			"URL": "http://tms.cadastre.openstreetmap.fr/*/tout/{z}/{x}/{y}.png",
-			"attribution": "Cadastre (DGFiP)",
-			"minZoom": 1,
-			"maxZoom": 20
-		},
-		{
 			"name": "MapQuest",
 			"URL": "http://otile{s}.mqcdn.com/tiles/1.0.0/map/{z}/{x}/{y}.jpg",
 			"attribution": "Tiles <a href=\"http://open.mapquest.com/\">MapQuest</a>",
 			"minZoom": 1,
 			"maxZoom": 19,
 			"subdomains": "1234"
-		}
+		},
+		{
+			"name": "台灣全島SPOT衛星影像",
+			"URL": "http://data.csrsr.ncu.edu.tw/SP/SP2014NC_3857/{z}/{x}/{y}.png",
+			"attribution": "衛星影像製作：<a href=\"http://www.csrsr.ncu.edu.tw\">國立中央大學太空及遙測研究中心</a>",
+			"minZoom": 6,
+			"maxZoom": 17
+		},
 	]
 }
