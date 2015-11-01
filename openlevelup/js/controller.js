@@ -132,10 +132,8 @@ var Ctrl = function() {
 	/**
 	 * This function initializes the controller
 	 */
-	Ctrl.prototype.init = function(mobile) {
-		mobile = mobile || false;
-		
-		this._view = new MainView(this, mobile);
+	Ctrl.prototype.init = function() {
+		this._view = new MainView(this);
 		
 		//Init leaflet map
  		this.onMapUpdate();
@@ -287,7 +285,7 @@ var Ctrl = function() {
 	 * This function is called after data download finishes
 	 */
 	Ctrl.prototype.endMapUpdate = function() {
-		this._view.getLoadingView().addLoadingInfo("Refresh map");
+		this._view.getLoadingView().addLoadingInfo("重新整理地圖");
 		this._view.updateMapMoved();
 		this._view.getLoadingView().setLoading(false);
 	};
@@ -296,7 +294,7 @@ var Ctrl = function() {
 	 * This function is called after cluster data download finishes
 	 */
 	Ctrl.prototype.endMapClusterUpdate = function() {
-		this._view.getLoadingView().addLoadingInfo("Refresh map");
+		this._view.getLoadingView().addLoadingInfo("重新整理地圖");
 		this._view.updateMapMoved();
 		this._view.getLoadingView().setLoading(false);
 	};
@@ -324,7 +322,7 @@ var Ctrl = function() {
 			oapiRequest = '[out:json][timeout:25][bbox:'+bounds+'];(way["indoor"]["indoor"!="yes"]["level"];way["buildingpart"]["level"];);out ids center;';
 		}
 		else {
-			oapiRequest = '[out:json][timeout:25][bbox:'+bounds+'];(node["repeat_on"];way["repeat_on"];relation["repeat_on"];node[~"^.*level$"~"."];way[~"^.*level$"~"."];relation[~"^.*level$"~"."];);out body;>;out qt skel;';
+			oapiRequest = '[out:json][timeout:25][bbox:'+bounds+'];(node["repeat_on"];way["repeat_on"];relation["repeat_on"];node[~"^((min|max)_)?level$"~"."];way[~"^((min|max)_)?level$"~"."];relation[~"^((min|max)_)?level$"~"."];);out body;>;out qt skel;';
 		}
 
 		//Download data
@@ -635,7 +633,8 @@ var Ctrl = function() {
 	 */
 	Ctrl.prototype.newNoteSent = function(data) {
 		this._view.getMessagesView().displayMessage("你的註記已成功發送", "info");
-		this._view.hideCentralPanel();
+		this._view.getMapView().hideDraggableMarker();
+		this._view.collapseSidebar();
 		
 		//Add given data to NotesData
 		this._notesData.parse(data);
@@ -649,5 +648,6 @@ var Ctrl = function() {
 	 */
 	Ctrl.prototype.newNoteFailed = function() {
 		this._view.getMessagesView().displayMessage("傳送註記時發生錯誤", "error");
-		this._view.hideCentralPanel();
+		this._view.getMapView().hideDraggableMarker();
+		this._view.collapseSidebar();
 	};

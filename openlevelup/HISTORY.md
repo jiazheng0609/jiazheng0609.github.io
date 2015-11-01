@@ -1,6 +1,22 @@
 Changes history
 ===============
 
+31 october 2015
+---------------
+* Style added for store_section=*
+
+30 october 2015
+---------------
+* QR Codes linking to a given map area added
+* Billboard icon changed
+
+22 october 2015
+---------------
+* New overlay panels, based on Leaflet Control Window
+* New left panel, based on Leaflet Sidebar v2
+* OpenLevelUp now fully responsive
+* Code clean-up of mobile version
+
 9 october 2015
 --------------
 * Icons for entrance=main, service, exit, emergency

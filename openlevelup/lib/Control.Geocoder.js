@@ -22,8 +22,8 @@
 			collapsed: true,
 			expand: 'click',
 			position: 'topright',
-			placeholder: 'Search...',
-			errorMessage: 'Nothing found.'
+			placeholder: '搜尋...',
+			errorMessage: '查無結果。'
 		},
 
 		_callbackId: 0,

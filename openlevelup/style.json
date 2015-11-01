@@ -287,7 +287,7 @@
 		
 		"amenity|public_transport|room": [
 			{
-				"description": "舒適設施",
+				"description": "便利設施",
 				"onTags": [ { "amenity": "toilets" }, { "public_transport": "waiting_area" }, { "room": "waiting" } ],
 				"style": { "fillColor": "#E3C8E3" }
 			}
@@ -466,6 +466,19 @@
 				"isDetail": true,
 				"style": { "icon": "generator_type_bicycle.png" }
 			}
+		],		
+		
+		"store_section": [
+			{
+				"name": "商店區塊: ${vending}",
+				"description": "大商店的一部分",
+				"onTags": [ { "store_section": "*" } ],
+				"style": {
+					"fillColor": "#FFCFCC", "color": "#D29494", "fillOpacity": 1, "layer": -4, "opacity": 1, "weight": 0.5, "label": "name", "labelStyle": "area",
+					"icon": "vending_${vending}.png",
+					"iconAlias": { "news_papers": "newspapers" }
+				}
+			}
 		],
 		
 		
@@ -617,7 +630,7 @@
 	},
 
 	"images": [
-		"access_customers.png",
+"access_customers.png",
 		"access_no.png",
 		"access_yes.png",
 		"aeroway_aerodrome.png",
@@ -830,7 +843,15 @@
 		"tourism_picnic_site.png",
 		"tourism_viewpoint.png",
 		"tourism_zoo.png",
+		"vending_bakery.png",
+		"vending_books.png",
+		"vending_clothes.png",
+		"vending_doityourself.png",
+		"vending_drink.png",
+		"vending_electronics.png",
+		"vending_meat.png",
 		"vending_newspapers.png",
-		"vending_public_transport_tickets.png"
+		"vending_public_transport_tickets.png",
+		"vending_seafood.png"
 	]
 }

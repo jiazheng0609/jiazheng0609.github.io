@@ -47,14 +47,14 @@
 		{
 			"name": "OpenStreetMap",
 			"URL": "http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-			"attribution": "Tiles <a href=\"http://openstreetmap.org/\">OSM</a>",
+			"attribution": "<a href=\"http://openstreetmap.org/\">OSM</a> 圖磚",
 			"minZoom": 1,
 			"maxZoom": 19
 		},
 		{
 			"name": "MapQuest",
 			"URL": "http://otile{s}.mqcdn.com/tiles/1.0.0/map/{z}/{x}/{y}.jpg",
-			"attribution": "Tiles <a href=\"http://open.mapquest.com/\">MapQuest</a>",
+			"attribution": "<a href=\"http://open.mapquest.com/\">MapQuest</a> 圖磚",
 			"minZoom": 1,
 			"maxZoom": 19,
 			"subdomains": "1234"

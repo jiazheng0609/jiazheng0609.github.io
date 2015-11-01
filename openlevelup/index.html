@@ -27,19 +27,12 @@
 <head>
 	<!--
 		TODO (by priority)
-		* Shorten URL
 		* Switch to CartoCSS
 		* Several themes for map
 		* Error panel for images or tags error (link to osm editor to correct ?)
 		* Shortcuts for changing levels
 		* Path finding in a building
 	-->
-	<!-- Redirect for small screens -->
-	<script type="text/javascript">
-		if (window.screen.width < 1000) {
-			window.location = 'm.index.html'+window.location.search;
-		}
-	</script>
 	
 	<!-- General definitions -->
 	<title>OpenLevelUp! 室內地圖</title>
@@ -48,6 +41,7 @@
 	<meta name="keywords" content="openlevelup, openstreetmap, osm, building, indoor, level, floor, map, viewer, 室內地圖, 開放街圖" />
 	<meta name="author" content="Adrien PAVIE (PanierAvide)" />
 	<meta name="copyright" content="&copy; Adrien PAVIE 2015, under AGPL v3" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 	<link rel="icon" type="image/jpg" href="img/favicon.jpg" />
 	
 	<!-- Leaflet includes -->
@@ -56,10 +50,7 @@
 
 	<!-- OSMtoGeoJSON include -->
 	<script src="lib/osmtogeojson.js"></script>
-	
-	<!-- FileSaver include -->
-	<!--script src="lib/FileSaver.js"></script-->
-	
+
 	<!-- Azimuth include -->
 	<script src="lib/azimuth.js"></script>
 	
@@ -76,22 +67,21 @@
 	<script src="lib/Detector.js"></script>
 	<script src="lib/three.min.js"></script>
 	
+	<!-- jQuery-QRCode includes -->
+	<script type="text/javascript" src="lib/jquery.qrcode.min.js"></script>
+
 	<!-- Leaflet plugin includes -->
 	<link rel="stylesheet" href="lib/markercluster/MarkerCluster.css" />
 	<link rel="stylesheet" href="lib/markercluster/MarkerCluster.Default.css" />
 	<script src="lib/markercluster/leaflet.markercluster-src.js"></script>
-	<!--script src="lib/polylinedecorator/L.LineUtil.PolylineDecorator.js"></script-->
 	<script src="lib/polylinedecorator/L.RotatedMarker.js"></script>
-	<!--script src="lib/polylinedecorator/L.Symbol.js"></script>
-	<script src="lib/polylinedecorator/L.PolylineDecorator.js"></script>
-	<script src="lib/polylinedecorator/leaflet.polylineDecorator.min.js"></script-->
 	<link rel="stylesheet" href="css/Control.Geocoder.css" />
 	<script src="lib/Control.Geocoder.js"></script>
-	
-	<!-- SVG.js includes -->
-	<!--script src="lib/svg.min.js"></script>
-	<script src="lib/svg.export.min.js"></script-->
-	
+	<link rel="stylesheet" href="lib/sidebar2/leaflet-sidebar.min.css" />
+	<script src="lib/sidebar2/leaflet-sidebar.min.js"></script>
+	<link rel="stylesheet" href="lib/controlwindow/L.Control.Window.custom.css" />
+	<script src="lib/controlwindow/L.Control.Window.js"></script>
+
 	<!-- OpenLevelUp includes -->
 	<script src="js/utils.js" type="text/javascript"></script>
 	<script src="js/controller.js" type="text/javascript"></script>
@@ -100,213 +90,73 @@
 	
 	<!-- CSS style -->
 	<link rel="stylesheet" href="css/common.css" />
-	<link rel="stylesheet" href="css/desktop.css" />
 	<link rel="stylesheet" href="css/labels.css" />
 </head>
 <body>
-	<!--
-	Map area
-	-->
-	<div id="map"></div>
-
-	<div id="over-map">
-	<!--
-	Main panels
-	-->
-	<div id="main-panel">
-		<div class="row">
-			<!-- Header -->
-			<header>
-				<div id="header-table">
-					<div id="header-content">
-						<div id="header-title" class="cell">
-							<h1><a id="logo-link" title="OpenLevelUp!"><img src="img/logo.jpg" alt="OpenLevelUp!" /></a></h1>
-							<p>用 OpenLevelUp!<br />看建築物的內部 <a class="help" title="在有室內資料的地方(地圖上的數字圓圈處)放大，然後用左側的上下箭頭瀏覽各樓層。">怎麼做？</a></p>
-						</div>
-						<div id="header-levels" class="cell">
-							<p>
-								<a class="button-level" id="levelUp"><img src="img/arrow_up_2.png" alt="&uarr;" /></a><br />
-								<select id="level" disabled="true"></select><br />
-								<a class="button-level" id="levelDown"><img src="img/arrow_down_2.png" alt="&darr;" /></a>
-							</p>
-						</div>
-					</div>
-				</div>
-			</header>
+	<!-- Side bar -->
+	<div id="sidebar" class="sidebar">
+		<!-- Nav tabs -->
+		<div class="sidebar-tabs">
+			<ul role="tablist">
+				<li class="active"><a href="#home" role="tab"><img src="img/favicon.jpg" /></i></a></li>
+			</ul>
+			
+			<ul role="tablist">
+				<li id="sidebar-tab-roomlist" class="disabled"><a href="#roomlist" role="tab"><img src="img/icon_rooms.svg" /></a></li>
+				<li id="sidebar-tab-notes" class="disabled"><a href="#notes" role="tab"><img src="img/icon_note.svg" /></a></li>
+			</ul>
+			
+			<div id="level-control">
+				<a id="levelUp"><img src="img/arrow_up_2.png" alt="↑" /></a><br />
+				<a><select id="level" disabled="true"></select></a><br />
+				<a id="levelDown"><img src="img/arrow_down_2.png" alt="↓" /></a>
+			</div>
 		</div>
-		
-		<div class="row" id="row-central">
-			<div id="central">
-				<div id="central-close">x</div>
+
+		<!-- Tab panes -->
+		<div class="sidebar-content">
+			<div class="sidebar-pane active" id="home">
+				<h1 class="sidebar-header">OpenLevelUp <div class="sidebar-close"><img src="img/icon_back.svg" alt="&lt;" /></div></h1>
+
 				
-				<!-- General settings -->
-				<div class="part" id="settings">
-					<h2><img src="img/icon_settings.svg" /> 設定</h2>
+				<header>
+					<a id="logo-link" title="OpenLevelUp!"><img src="img/logo.jpg" alt="OpenLevelUp!" /></a>
+					<p>用 OpenLevelUp!<br> 看建築物的內部 <a class="help" title="在有室內資料的地方(地圖上的數字圓圈處)放大，然後用左側的上下箭頭瀏覽各樓層。">怎麼做？</a></p>
+				</header>
+				
+				<div id="settings">
 					<ul>
-						<li><label><input type="checkbox" id="show-transcendent" checked="true" disabled="true" /> 顯示<a class="help" title="穿透樓層的物件，像是樓梯或電梯。">穿透樓層物件</a></label></li>
-						<li><label><input type="checkbox" id="show-buildings-only" disabled="true" /> 只顯示<a class="help" title="隱藏所有不適建築的物件(沒有 building=* 標籤)">建築物</a></label></li>
+						<li><label><input type="checkbox" id="show-transcendent" checked="true" disabled="true" /> 顯示<a class="help" title="穿透樓層的物件，像是樓梯或電梯">穿透樓層物件</a></label></li>
+						<li><label><input type="checkbox" id="show-buildings-only" disabled="true" /> 只顯示<a class="help" title="隱藏所有不是建築的物件(沒有 building=* 標籤)">建築物</a></label></li>
 						<li><label><input type="checkbox" id="show-photos" disabled="true" /> 顯示<a class="help" title="標記出有關聯照片的物件">照片</a></label></li>
-						<li><label><input type="checkbox" id="show-unrendered" disabled="true" /> 顯示<a class="help" title="包含室內資料的物件，但不在我們的繪圖規則裡。代表該物件不必被繪圖出來或遺漏所需資訊。">未繪圖的物件</a></label></li>
+						<li><label><input type="checkbox" id="show-unrendered" disabled="true" /> 顯示<a class="help" title="包含室內資料，但不在我們的繪圖規則裡的物件。代表該物件不必被繪圖出來或遺漏所需資訊。">未繪圖的物件</a></label></li>
 						<li><label><input type="checkbox" id="show-notes" disabled="true" /> 顯示 <a class="help" title="OpenStreetMap 註記能讓其他使用者知道那裡的資料還需編輯。">OpenStreetMap 註記</a></label></li>
 					</ul>
 				</div>
 				
-				<!-- Room names -->
-				<div class="part" id="room-names">
-					<h2><img src="img/icon_rooms.svg" /> 房間</h2>
-					<p class="input-max"><span class="text"><input type="text" id="search-room" value="Search" /></span><input type="submit" id="search-room-reset" value="X" /></p>
-					<div id="rooms-container">
-						<div id="rooms">
-						</div>
-					</div>
-				</div>
-				
-				<!-- Export -->
-				<div class="part" id="export">
-					<h2><img src="img/icon_export.svg" /> 匯出樓層</h2>
-					<p>敬請期待！</p>
-					<!--p><a id="export-link" href="#">As GeoJSON</a> | <a id="export-link-img" href="#">As an image</a></p-->
-				</div>
-				
-				<!-- New note -->
-				<div class="part" id="note-add">
-					<h2><img src="img/icon_note.svg" /> New note</h2>
-					<p>新增一個註記，讓大家知道這裡有錯誤或被遺漏的東西。拖放標記至有問題的地點，再給我們些細節。</p>
-					<textarea id="note-txt" rows="5"></textarea>
-					<button id="note-send">新增一個註記</button>
-				</div>
+				<footer>
+					<p><a id="osm-link" title="在 OpenStreetMap 查看目前區域" href="http://openstreetmap.org">OSM.org</a> | <a href="#" id="about-link" title="了解此專案的更多訊息">關於</a><br /><a id="shortlink" href="" title="目前地圖區域的短網址">短網址</a> | <a id="qrcode-link" href="#" title="目前地圖區域的 QR Code">QR Code</a><br />&copy; <a href="http://adrien.pavie.info">Adrien PAVIE</a> 2015</p>
+				</footer>
 			</div>
-		</div>
 
-		<div class="row">
-			<!-- Footer -->
-			<footer>
-				<p><a id="osm-link" title="See this area on OpenStreetMap" href="http://openstreetmap.org">OSM.org</a> | <a id="shortlink" href="">短網址</a> | <a href="#" id="about-link">關於</a><br />&copy; <a href="http://adrien.pavie.info">Adrien PAVIE</a> 2015</p>
-			</footer>
-		</div>
-	</div>
-	
-	<!-- Buttons for main panel settings -->
-	<div id="main-buttons">
-		<div class="row">
-			<div id="button-settings" class="button">
-				<p><img src="img/icon_settings.svg" title="設定" alt="設定" /></p>
+			<div class="sidebar-pane" id="roomlist">
+				<h1 class="sidebar-header"><img src="img/icon_rooms.svg" /> 房間<div class="sidebar-close"><img src="img/icon_back.svg" alt="&lt;" /></div></h1>
+				<p class="input-max"><span class="text"><input type="text" id="search-room" value="搜尋" /></span><input type="submit" id="search-room-reset" value="X" /></p>
+				<div id="rooms">
+				</div>
 			</div>
-		</div>
-		<div class="row">
-			<div id="button-rooms" class="button">
-				<p><img src="img/icon_rooms.svg" title="房間" alt="房間" /></p>
-			</div>
-		</div>
-		<div class="row">
-			<div id="button-export" class="button">
-				<p><img src="img/icon_export.svg" title="匯出" alt="匯出" /></p>
-			</div>
-		</div>
-	</div>
-	</div>
 
-
-	<!--
-	Overlay panels
-	-->
-	<div class="overlay-panels">
-		<!-- Loading panel -->
-		<div class="overlay-panel hide" id="op-loading">
-			<div>
-				<h2><img src="img/icon_spinner.gif" height="32" />讀取中</h2>
-				<ul id="op-loading-info">
-				</ul>
-			</div>
-		</div>
-		
-		<!-- About panel -->
-		<div class="overlay-panel hide" id="op-about">
-			<div class="centered">
-				<h2>關於 OpenLevelUp!</h2>
-				<p>本網站讓你能看到 <a href="http://openstreetmap.org">OpenStreetMap</a> 專案中的<a href="http://wiki.openstreetmap.org/wiki/Simple_Indoor_Tagging">室內資料</a>。你可以用左側的上下箭頭瀏覽各樓層。<br />想知道此專案更多訊息？請見<a href="https://github.com/PanierAvide/panieravide.github.io/tree/master/openlevelup">原作</a>或<a href="https://github.com/jiazheng0609/jiazheng0609.github.io/tree/master/openlevelup">中文翻譯版本</a> GitHub repository。想與原作者聯絡？<a href="mailto:panieravide@riseup.net">拿去</a>。<br />此網站的授權條款是 <a href="https://www.gnu.org/licenses/agpl.html">AGPL v3</a>。</p>
-				<p class="overlay-close"><a id="about-close" href="#">關閉</a></p>
-			</div>
-		</div>
-		
-		<!-- Tags panel -->
-		<div class="overlay-panel hide" id="op-tags">
-			<div class="centered">
-				<h2>Details</h2>
-				<p id="op-tags-details"></p>
-				<p id="op-tags-list"></p>
-				<p class="overlay-close"><a id="tags-close" href="#">關閉</a></p>
-			</div>
-		</div>
-		
-		<!-- Images panel -->
-		<div class="overlay-panel hide" id="op-images">
-			<div class="wide">
-				<div class="small-row" id="op-images-tabs-links">
-					<a id="tab-imgs-a" href="#tab-imgs"><img src="img/icon_picture.svg" alt="Simple" /></a>
-					<a id="tab-spheric-a" href="#tab-spheric"><img src="img/icon_spherical_picture.svg" alt="Sphere" /></a>
-				</div>
-				<div id="op-images-tabs-content">
-					<div class="op-images-tab galleria" id="tab-imgs">
-					</div>
-					<div class="op-images-tab" id="tab-spheric">
-						<div id="spherical-content"></div>
-						<div id="spherical-legend">
-							<div id="spherical-legend-title"></div>
-							<div id="spherical-legend-text"></div>
-						</div>
-						<div id="spherical-nav">
-							<div id="spherical-nav-left">&lt;</div>
-							<div id="spherical-nav-right">&gt;</div>
-						</div>
-						<div id="spherical-counter">
-							<span>- / -</span>
-						</div>
-						<!--div id="spherical-direction">
-							<span>0°</span>
-						</div-->
-					</div>
-				</div>
-				<div class="small-row" id="op-images-footer">
-					<p id="op-images-status">
-						<img src="img/icon_web.svg" alt="Web" title="Web" /> <a id="status-web"><span class="status">&#x25CF;</span></a>
-						<img src="img/icon_mapillary.svg" alt="Mapillary" title="Mapillary" /> <a id="status-mapillary"><span class="status">&#x25CF;</span></a>
-						<img src="img/icon_flickr.svg" alt="Flickr" title="Flickr" /> <a id="status-flickr"><span class="status">&#x25CF;</span></a>
-					</p>
-					<p class="overlay-close"><a id="images-close" href="#">關閉</a></p>
-				</div>
-			</div>
-		</div>
-		
-		<!-- Notes panel -->
-		<div class="overlay-panel hide" id="op-notes">
-			<div class="centered">
-				<h2>註記</h2>
-				<div id="op-notes-comments">
-					<div class="op-notes-comment">
-						<p class="desc">使用者 x, 2015-08-15 16h00</p>
-						<p class="txt">這裡是 52 rue belle épine 的真實地點</p>
-					</div>
-				</div>
-				<div id="op-notes-footer">
-					狀態: <span id="notes-status-txt"></span> | <a id="notes-link" href="">在 OSM.org 上查看</a> | <a id="notes-close" href="#">關閉</a>
-				</div>
+			<div class="sidebar-pane" id="notes">
+				<h1 class="sidebar-header"><img src="img/icon_note.svg" /> 新註記<div class="sidebar-close"><img src="img/icon_back.svg" alt="&lt;" /></div></h1>
+				<p>新增一個註記，讓大家知道這裡有錯誤或被遺漏的東西。拖放標記至有問題的地點，再給我們些細節。</p>
+				<textarea id="note-txt" rows="5"></textarea>
+				<div class="buttons"><button id="note-send">新註記</button><button id="note-cancel">取消</button></div>
 			</div>
 		</div>
 	</div>
 	
-	<!-- Message/info box list -->
-	<div id="infobox">
-		<ul id="infobox-list">
-		</ul>
-	</div>
-
-
-	<!--
-	SVG area (hidden)
-	-->
-	<!--div id="svg-area">
-	</div-->
+	<!-- Map area -->
+	<div id="map" class="sidebar-map"></div>
 
 	<!--
 	JS init code

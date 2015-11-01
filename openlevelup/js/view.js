@@ -27,13 +27,10 @@
  * The main view class.
  * It handles the index page, and contains links to sub-components.
  */
-var MainView = function(ctrl, mobile) {
+var MainView = function(ctrl) {
 //ATTRIBUTES
 	/** The main controller **/
 	this._ctrl = ctrl;
-	
-	/** Is the user using a mobile device ? **/
-	this._isMobile = mobile || false;
 	
 	/** Is the user using a WebGL capable browser ? **/
 	this._hasWebGL = Detector.webgl;
@@ -42,22 +39,19 @@ var MainView = function(ctrl, mobile) {
 	 * The view components
 	 */
 	/** The loading component **/
-	this._cLoading = new LoadingView();
+	this._cLoading = null;
 	
 	/** The about component **/
-	this._cAbout = new AboutView();
+	this._cAbout = null;
 	
 	/** The messages stack component **/
-	this._cMessages = new MessagesView();
+	this._cMessages = null;
 	
 	/** The URL component **/
 	this._cUrl = null;
 	
 	/** The options component **/
 	this._cOptions = new OptionsView();
-	
-	/** The export component **/
-	this._cExport = null;
 	
 	/** The names component **/
 	this._cNames = null;
@@ -80,14 +74,15 @@ var MainView = function(ctrl, mobile) {
 //CONSTRUCTOR
 	this._cUrl = new URLView(this);
 	this._cMap = new MapView(this);
+	this._cLoading = new LoadingView(this);
+	this._cMessages = new MessagesView(this);
+	this._cAbout = new AboutView(this);
 	this._cNames = new NamesView(this);
 	this._cImages = new ImagesView(this);
 	this._cLevel = new LevelView(this);
-	this._cExport = new ExportView(this);
 	this._cTags = new TagsView(this);
 	this._cNotes = new NotesView(this);
 	
-	this._cExport.hideButton();
 	this._cNames.hideButton();
 	this._cLevel.disable();
 	
@@ -95,6 +90,12 @@ var MainView = function(ctrl, mobile) {
 	$("#logo-link").click(function() {
 		controller.getView().getMapView().resetView();
 	});
+	
+	//Collapse sidebar if is mobile
+	if($(window).width() < 768) {
+		$("#sidebar").addClass("collapsed");
+		$("#sidebar li.active").removeClass("active");
+	}
 };
 
 //ACCESSORS
@@ -102,7 +103,7 @@ var MainView = function(ctrl, mobile) {
 	 * @return True if the application is viewed in a mobile device
 	 */
 	MainView.prototype.isMobile = function() {
-		return this._isMobile;
+		return $(window).width() < 768;
 	};
 	
 	/**
@@ -211,8 +212,8 @@ var MainView = function(ctrl, mobile) {
 			
 			//Add names and export buttons if needed
 			if(oldZoom == null || oldZoom < CONFIG.view.map.full_data_min_zoom) {
-				this._cExport.showButton();
 				this._cNames.showButton();
+				this._cNotes.showButton();
 				this._cLevel.enable();
 				this._cOptions.enable();
 				this._cMap.update();
@@ -224,8 +225,8 @@ var MainView = function(ctrl, mobile) {
 			
 			//Add names and export buttons if needed
 			if(oldZoom == null || oldZoom < CONFIG.view.map.data_min_zoom) {
-				this._cExport.showButton();
 				this._cNames.showButton();
+				this._cNotes.showButton();
 				this._cLevel.enable();
 				this._cOptions.enable();
 				this._cMap.update();
@@ -237,8 +238,8 @@ var MainView = function(ctrl, mobile) {
 		else if(zoom >= CONFIG.view.map.cluster_min_zoom) {
 			//Remove names and export buttons if needed
 			if(oldZoom == null || oldZoom >= CONFIG.view.map.data_min_zoom) {
-				this._cExport.hideButton();
 				this._cNames.hideButton();
+				this._cNotes.hideButton();
 				this._cLevel.disable();
 				this._cOptions.disable();
 			}
@@ -252,8 +253,8 @@ var MainView = function(ctrl, mobile) {
 			
 			//Remove names and export buttons if needed
 			if(oldZoom == null || oldZoom >= CONFIG.view.map.data_min_zoom) {
-				this._cExport.hideButton();
 				this._cNames.hideButton();
+				this._cNotes.hideButton();
 				this._cLevel.disable();
 				this._cOptions.disable();
 			}
@@ -299,37 +300,12 @@ var MainView = function(ctrl, mobile) {
 	};
 	
 	/**
-	 * Displays the given central panel
-	 * @param id The panel ID
-	 */
-	MainView.prototype.showCentralPanel = function(id) {
-		if(!$("#"+id).is(":visible")) {
-			//Remove draggable marker if new note panel
-			if($("#note-add").is(":visible")) {
-				this._cMap.hideDraggableMarker();
-			}
-			
-			$("#central .part").hide();
-			$("#"+id).show();
-			$("#main-buttons").addClass("opened");
-			$("#central-close").show();
-			$("#central-close").click(controller.getView().hideCentralPanel.bind(this));
-		}
-		else {
-			this.hideCentralPanel();
-		}
-	};
-	
-	/**
 	 * Hides the central panel
 	 */
-	MainView.prototype.hideCentralPanel = function() {
-		$("#central .part").hide();
-		$("#central-close").hide();
-		$("#central-close").off("click");
-		$("#main-buttons").removeClass("opened");
-		
-		this._cMap.hideDraggableMarker();
+	MainView.prototype.collapseSidebar = function() {
+		$(".sidebar-tabs li").removeClass("active");
+		$("#sidebar .sidebar-pane").removeClass("active");
+		$("#sidebar").addClass("collapsed");
 	};
 
 
@@ -367,8 +343,6 @@ var MapView = function(main) {
 	this._oldZoom = null;
 
 //CONSTRUCTOR
-	var isMobile = this._mainView.isMobile();
-	
 	//Get URL values to restore
 	var url = this._mainView.getUrlView();
 	var lat = (url.getLatitude() != undefined) ? url.getLatitude() : 23.97565;
@@ -398,37 +372,23 @@ var MapView = function(main) {
 		this._map.setView([lat, lon], zoom);
 	}
 	
-	if(!isMobile) {
-		L.control.zoom({ position: "topright" }).addTo(this._map);
-	}
+	L.control.zoom({ position: "topright" }).addTo(this._map);
 	
 	//Add search bar
-	//TODO Remove mobile condition, only to get to time to solve search bar bug
-	if(!isMobile) {
-		var search = L.Control.geocoder({ position: "topright" });
-		//Limit max zoom in order to avoid having no tiles in background for small objects
-		var minimalMaxZoom = CONFIG.tiles[0].maxZoom;
-		for(var i=0; i < CONFIG.tiles.length; i++) {
-			if(CONFIG.tiles[i].maxZoom < minimalMaxZoom) {
-				minimalMaxZoom = CONFIG.tiles[i].maxZoom;
-			}
+	var search = L.Control.geocoder({ position: "topright" });
+	//Limit max zoom in order to avoid having no tiles in background for small objects
+	var minimalMaxZoom = CONFIG.tiles[0].maxZoom;
+	for(var i=0; i < CONFIG.tiles.length; i++) {
+		if(CONFIG.tiles[i].maxZoom < minimalMaxZoom) {
+			minimalMaxZoom = CONFIG.tiles[i].maxZoom;
 		}
-		//Redefine markGeocode to avoid having an icon for the result
-		search.markGeocode = function (result) {
-			this._map.fitBounds(result.bbox, { maxZoom: minimalMaxZoom });
-			return this;
-		};
-		search.addTo(this._map);
 	}
-	
-	if(isMobile) {
-		L.control.zoom({ position: "topright" }).addTo(this._map);
-	}
-	
-	//New note button
-	if(!isMobile) {
-		var newNoteBtn = new NoteButton().addTo(this._map);
-	}
+	//Redefine markGeocode to avoid having an icon for the result
+	search.markGeocode = function (result) {
+		this._map.fitBounds(result.bbox, { maxZoom: minimalMaxZoom });
+		return this;
+	};
+	search.addTo(this._map);
 	
 	//Create tile layers
 	this._tileLayers = [];
@@ -463,6 +423,9 @@ var MapView = function(main) {
 		}
 	}
 	L.control.layers(tileLayers).addTo(this._map);
+	
+	//Init sidebar
+	L.control.sidebar("sidebar").addTo(this._map);
 	
 	//Trigger for map events
 	this._map.on('moveend', function(e) { controller.onMapUpdate(); });
@@ -504,7 +467,7 @@ var MapView = function(main) {
 	 * Zoom and set center on default position
 	 */
 	MapView.prototype.resetView = function() {
-		this._map.setView(L.latLng(47, 2), 6);
+		this._map.setView(L.latLng(23.97565, 120.973882), 8);
 	};
 
 //OTHER METHODS
@@ -755,26 +718,25 @@ var MapView = function(main) {
 		setTimeout(function() {
 			if(this._mainView.getLoadingView().isLoading()) {
 				$(document).bind("loading_done", function() {
-					this._dataPopups[ftId].openPopup(centroidLatLng);
+					if(this._dataPopups[ftId] != undefined) {
+						this._dataPopups[ftId].openPopup(centroidLatLng);
+					}
+					else {
+						console.error("[Rooms] Undefined popup for "+ftId);
+					}
 					$(document).unbind("loading_done");
 				}.bind(this));
 			}
 			else {
-				this._dataPopups[ftId].openPopup(centroidLatLng);
+				if(this._dataPopups[ftId] != undefined) {
+					this._dataPopups[ftId].openPopup(centroidLatLng);
+				}
+				else {
+					console.error("[Rooms] Undefined popup for "+ftId);
+				}
 			}
 		}.bind(this),
 		300);
-	};
-
-	/**
- 	 * Changes the currently shown popup tab
-	 * @param id The ID of the tab to show (for exemple "general")
-	 */
-	MapView.prototype.changePopupTab = function(id) {
-		$(".popup-nav .item:visible").removeClass("selected");
-		$(".popup-tab:visible").hide();
-		$(".leaflet-popup:visible #popup-tab-"+id).show();
-		$("#item-"+id).addClass("selected");
 	};
 	
 	/**
@@ -799,6 +761,7 @@ var MapView = function(main) {
 	MapView.prototype.hideDraggableMarker = function() {
 		if(this._draggableMarker != null) {
 			this._map.removeLayer(this._draggableMarker);
+			this._draggableMarker = null;
 		}
 	};
 	
@@ -875,7 +838,7 @@ var FeatureView = function(main, feature, details) {
 			
 			//Look for an icon or a label
 			var labelizable = this._labelizable();
-			var hasPhoto = this._mainView.getOptionsView().showPhotos() && (this._feature.getImages().hasValidImages() || (this._mainView.hasWebGL() && !this._mainView.isMobile() && this._feature.getImages().hasValidSpherical()));
+			var hasPhoto = this._mainView.getOptionsView().showPhotos() && (this._feature.getImages().hasValidImages() || (this._mainView.hasWebGL() && this._feature.getImages().hasValidSpherical()));
 			
 			var ftLevels = this._feature.onLevels();
 			var levelUp = false, levelDown = false, lvlUpIcon, lvlDownIcon;
@@ -1281,16 +1244,14 @@ var FeatureView = function(main, feature, details) {
 		text += '</h1><div class="popup-footer">';
 		
 		//Picture link
-		if(this._feature.getImages().hasValidImages() || (this._mainView.hasWebGL() && !this._mainView.isMobile() && this._feature.getImages().hasValidSpherical())) {
+		if(this._feature.getImages().hasValidImages() || (this._mainView.hasWebGL() && this._feature.getImages().hasValidSpherical())) {
 			text += '<a href="#" id="images-open" title="Related pictures" onclick="controller.getView().getImagesView().open(\''+this._feature.getId()+'\')"><img src="img/icon_picture_2.svg" alt="Pictures" /></a> ';
 		}
 		
 		//Tags and OSM links
-		text += '<a href="#" id="tags-open" title="Tags" onclick="controller.getView().getTagsView().open(\''+this._feature.getId()+'\')"><img src="img/icon_tags.svg" alt="Tags" /></a><a href="http://www.openstreetmap.org/'+this._feature.getId()+'" title="在 OSM.org 上查看此物件" target="_blank"><img src="img/icon_osm.svg" alt="OSM.org" /></a></div>';
+		text += '<a href="#" id="tags-open" title="標籤" onclick="controller.getView().getTagsView().open(\''+this._feature.getId()+'\')"><img src="img/icon_tags.svg" alt="標籤" /></a><a href="http://www.openstreetmap.org/'+this._feature.getId()+'" title="在 OSM.org 查看此物件" target="_blank"><img src="img/icon_osm.svg" alt="OSM.org" /></a></div>';
 		
-		var options = (isMobile) ? { autoPan: false } : { };
-		
-		return L.popup(options).setContent(text);
+		return L.popup({ autoPan: false }).setContent(text);
 	}
 	
 	/**
@@ -1345,12 +1306,6 @@ var TagsView = function(main) {
 //ATTRIBUTES
 	/** The main view **/
 	this._mainView = main;
-
-//CONSTRUCTOR
-	$("#tags-close").click(function() {
-		$("#op-tags").removeClass("show");
-		$("#op-tags").addClass("hide");
-	});
 };
 
 //OTHER METHODS
@@ -1448,7 +1403,7 @@ var TagsView = function(main) {
 						if(detail.link != undefined) {
 							link = detail.link.replace(regex, val);
 						}
-						detailsTxt += '<a href="'+link+'" target="_blank"><img src="'+CONFIG.view.icons.folder+'/icon_link.svg" alt="Link" /></a>';
+						detailsTxt += '<a href="'+link+'" target="_blank"><img src="'+CONFIG.view.icons.folder+'/icon_link.svg" alt="連結" /></a>';
 						break;
 
 					case "direction":
@@ -1517,19 +1472,22 @@ var TagsView = function(main) {
 		
 		console.log("layer",ft.getStyle().get().layer);
 		
-		$("#op-tags-list").html(tagList);
+		var content = '<p class="op-tags-list">'+tagList+'</p>';
 		
 		if(detailsTxt != '') {
-			$("#op-tags-details").show();
-			$("#op-tags-details").html(detailsTxt);
+			content = '<p class="op-tags-details">'+detailsTxt+'</p>' + content;
 		}
-		else {
-			$("#op-tags-details").hide();
-		}
-
-		//Show panel
-		$("#op-tags").removeClass("hide");
-		$("#op-tags").addClass("show");
+		
+		//Create window
+		L.control.window(
+			this._mainView.getMapView().get(),
+			{
+				title: '細節',
+				content: content,
+				position: 'center',
+				visible: true
+			}
+		);
 	};
 
 	/**
@@ -1752,9 +1710,6 @@ var OptionsView = function() {
 	$("#show-notes").prop("checked", this._notes);
 	
 	//Add triggers
-	$("#button-settings").click(function() {
-		controller.getView().showCentralPanel("settings");
-	});
 	$("#show-transcendent").change(function() {
 		this.changeTranscendent();
 		controller.getView().updateOptionChanged();
@@ -1916,40 +1871,6 @@ var OptionsView = function() {
 
 
 /**
- * The export component
- */
-var ExportView = function(main) {
-//ATTRIBUTES
-	/** The main view **/
-	this._mainView = main;
-
-//CONSTRUCTOR
-	$("#button-export").click(function() {
-		controller.getView().showCentralPanel("export");
-	});
-	//$("#export-link").click(controller.onExportLevel);
-	//$("#export-link-img").click(controller.onExportLevelImage);
-};
-	
-//OTHER METHODS
-	/**
-	 * Shows the export button
-	 */
-	ExportView.prototype.showButton = function() {
-		$("#button-export").show();
-	};
-	
-	/**
-	 * Hides the export button
-	 */
-	ExportView.prototype.hideButton = function() {
-		$("#button-export").hide();
-		this._mainView.hideCentralPanel();
-	};
-
-
-
-/**
  * The permalink and browser URL component
  */
 var URLView = function(main) {
@@ -1970,6 +1891,8 @@ var URLView = function(main) {
 //CONSTRUCTOR
 	this._readUrl();
 	this._setShortlink();
+	//QR Code link
+	$("#qrcode-link").click(this.showQRCode.bind(this));
 };
 
 //ACCESSORS
@@ -2064,6 +1987,28 @@ var URLView = function(main) {
 	};
 	
 	/**
+	 * Shows a QR Code in a window directing to the current view
+	 */
+	URLView.prototype.showQRCode = function() {
+		//Create window
+		var lwindow = L.control.window(
+			this._mainView.getMapView().get(),
+			{
+				title: 'QR Code',
+				content: '<div id="qrcode"></div>',
+				position: 'center',
+				modal: true
+			}
+		);
+		
+		//Create QR Code in div
+		$("#qrcode").qrcode($("#shortlink").attr('href'));
+		
+		//Show window
+		lwindow.show();
+	};
+	
+	/**
 	 * @return The page base URL
 	 */
 	URLView.prototype._getUrl = function() {
@@ -2120,7 +2065,7 @@ var URLView = function(main) {
 				}
 			}
 			else {
-				this._mainView.getMessagesView().displayMessage("無效的短連結", "alert");
+				this._mainView.getMessagesView().displayMessage("Invalid short link", "alert");
 			}
 		}
 		//Read parameters directly
@@ -2128,31 +2073,39 @@ var URLView = function(main) {
 			this._bbox = parameters.bbox;
 			this._lat = parameters.lat;
 			this._lon = parameters.lon;
-			this._zoom = parameters.zoom;
-			if(parameters.transcend != undefined) { optionsView.setTranscendent(parameters.transcend == "1"); }
-			if(parameters.unrendered != undefined) { optionsView.setUnrendered(parameters.unrendered == "1"); }
-			if(parameters.buildings != undefined) { optionsView.setBuildingsOnly(parameters.buildings == "1"); }
-			if(parameters.photos != undefined) { optionsView.setPhotos(parameters.photos == "1"); }
-			if(parameters.notes != undefined) { optionsView.setNotes(parameters.notes == "1"); }
-			this._level = parameters.level;
-			this._tiles = parameters.tiles;
+			this._zoom = parameters.z || parameters.zoom;
+			
+			//Convert old URL parameters names
+			if(parameters.transcend != undefined) { parameters.tcd = parameters.transcend; }
+			if(parameters.unrendered != undefined) { parameters.urd = parameters.unrendered; }
+			if(parameters.buildings != undefined) { parameters.bdg = parameters.buildings; }
+			if(parameters.photos != undefined) { parameters.pic = parameters.photos; }
+			if(parameters.notes != undefined) { parameters.nte = parameters.notes; }
+			
+			if(parameters.tcd != undefined) { optionsView.setTranscendent(parameters.tcd == "1"); }
+			if(parameters.urd != undefined) { optionsView.setUnrendered(parameters.urd == "1"); }
+			if(parameters.bdg != undefined) { optionsView.setBuildingsOnly(parameters.bdg == "1"); }
+			if(parameters.pic != undefined) { optionsView.setPhotos(parameters.pic == "1"); }
+			if(parameters.nte != undefined) { optionsView.setNotes(parameters.nte == "1"); }
+			this._level = parameters.lvl || parameters.level;
+			this._tiles = parameters.t || parameters.tiles;
 		}
 	};
 	
 	URLView.prototype._updateUrl = function() {
 		var optionsView = this._mainView.getOptionsView();
-		var params = "lat="+this._lat+"&lon="+this._lon+"&zoom="+this._zoom+"&tiles="+this._tiles;
+		var params = "lat="+this._lat.toFixed(6)+"&lon="+this._lon.toFixed(6)+"&z="+this._zoom+"&t="+this._tiles;
 		
 		if(this._zoom >= CONFIG.view.map.data_min_zoom) {
 			if(this._level != null) {
-				params += "&level="+this._level;
+				params += "&lvl="+this._level;
 			}
 			
-			params += "&transcend="+((optionsView.showTranscendent()) ? "1" : "0");
-			params += "&unrendered="+((optionsView.showUnrendered()) ? "1" : "0");
-			params += "&buildings="+((optionsView.showBuildingsOnly()) ? "1" : "0");
-			params += "&photos="+((optionsView.showPhotos()) ? "1" : "0");
-			params += "&notes="+((optionsView.showNotes()) ? "1" : "0");
+			params += "&tcd="+((optionsView.showTranscendent()) ? "1" : "0");
+			params += "&urd="+((optionsView.showUnrendered()) ? "1" : "0");
+			params += "&bdg="+((optionsView.showBuildingsOnly()) ? "1" : "0");
+			params += "&pic="+((optionsView.showPhotos()) ? "1" : "0");
+			params += "&nte="+((optionsView.showNotes()) ? "1" : "0");
 		}
 		
 		var hash = this._getUrlHash();
@@ -2235,15 +2188,12 @@ var NamesView = function(main) {
 	this._mainView = main;
 
 //CONSTRUCTOR
-	$("#button-rooms").click(function() {
-		this._mainView.showCentralPanel("room-names");
-	}.bind(this));
 	$("#search-room").click(this.searchFocus.bind(this));
 	$("#search-room").focus(this.searchFocus.bind(this));
 	$("#search-room").focusout(this.searchFocus.bind(this));
 	$("#search-room").bind("input propertychange", this.update.bind(this));
 	$("#search-room-reset").click(this.reset.bind(this));
-	$("#search-room").val("搜尋");
+	$("#search-room").val("Search");
 };
 
 //OTHER METHODS
@@ -2251,15 +2201,14 @@ var NamesView = function(main) {
 	 * Shows the export button
 	 */
 	NamesView.prototype.showButton = function() {
-		$("#button-rooms").show();
+		$("#sidebar-tab-roomlist").removeClass("disabled");
 	};
 	
 	/**
 	 * Hides the export button
 	 */
 	NamesView.prototype.hideButton = function() {
-		$("#button-rooms").hide();
-		this._mainView.hideCentralPanel();
+		$("#sidebar-tab-roomlist").addClass("disabled");
 	};
 	
 	/**
@@ -2274,15 +2223,15 @@ var NamesView = function(main) {
 			var roomNamesFiltered = null;
 			
 			if(roomNames != null) {
-				roomNamesFiltered = new Object();
+				roomNamesFiltered = {};
 				
 				for(var lvl in roomNames) {
-					roomNamesFiltered[lvl] = new Object();
+					roomNamesFiltered[lvl] = {};
 					
 					for(var room in roomNames[lvl]) {
 						var ftGeomRoom = roomNames[lvl][room].getGeometry();
 						
-						if((filter == null || contains(room.toLowerCase(), filter.toLowerCase()))
+						if((filter == null || room.toLowerCase().indexOf(filter.toLowerCase()) > -1)
 							&& (roomNames[lvl][room].getStyle().get().popup == undefined
 							|| roomNames[lvl][room].getStyle().get().popup == "yes")
 							&& this._mainView.getData().getBBox().intersects(ftGeomRoom.getBounds())) {
@@ -2299,8 +2248,6 @@ var NamesView = function(main) {
 			}
 			
 			if(roomNames != null && roomNamesFiltered != null) {
-				//$("#rooms").empty();
-				
 				var levelsKeys = Object.keys(roomNamesFiltered);
 				levelsKeys.sort(function (a,b) { return parseFloat(a)-parseFloat(b);});
 				
@@ -2344,7 +2291,7 @@ var NamesView = function(main) {
 	 */
 	NamesView.prototype.searchOK = function() {
 		var search = $("#search-room").val();
-		return !this._mainView.isMobile() && search != "搜尋" && search.length >= 3;
+		return search != "搜尋" && search.length >= 3;
 	};
 	
 	/**
@@ -2352,7 +2299,7 @@ var NamesView = function(main) {
 	 */
 	NamesView.prototype.searchFocus = function() {
 		var search = $("#search-room").val();
-		if(search == "搜尋" && $("#search-room").is(":focus")) {
+		if(search == "Search" && $("#search-room").is(":focus")) {
 			$("#search-room").val("");
 		}
 		else if(search == "" && !$("#search-room").is(":focus")) {
@@ -2372,6 +2319,9 @@ var ImagesView = function(main) {
 	
 	/** The currently shown spherical image **/
 	this._currentSpherical = -1;
+	
+	/** The leaflet window **/
+	this._window = null;
 	
 	/** The available spherical images **/
 	this._sphericalImages = null;
@@ -2394,13 +2344,42 @@ var ImagesView = function(main) {
 	this._theta = null;
 	this._firstClick = null;
 	this._mesh = null;
-	
+
 //CONSTRUCTOR
-	//$("#op-images").hide();
-	$("#images-close").click(function() {
-		$("#op-images").removeClass("show");
-		$("#op-images").addClass("hide");
-	});
+	this._window = L.control.window(
+		this._mainView.getMapView().get(),
+		{
+			title: '<div id="op-images-tabs-links"><a id="tab-imgs-a" href="#tab-imgs"><img src="img/icon_picture.svg" alt="Simple" /></a><a id="tab-spheric-a" href="#tab-spheric"><img src="img/icon_spherical_picture.svg" alt="Sphere" /></a></div>',
+			content: '<div id="op-images-tabs-content">'
+				+'	<div class="op-images-tab galleria" id="tab-imgs">'
+				+'	</div>'
+				+'	<div class="op-images-tab" id="tab-spheric">'
+				+'		<div id="spherical-content"></div>'
+				+'		<div id="spherical-legend">'
+				+'			<div id="spherical-legend-title"></div>'
+				+'			<div id="spherical-legend-text"></div>'
+				+'		</div>'
+				+'		<div id="spherical-nav">'
+				+'			<div id="spherical-nav-left">&lt;</div>'
+				+'			<div id="spherical-nav-right">&gt;</div>'
+				+'		</div>'
+				+'		<div id="spherical-counter">'
+				+'			<span>- / -</span>'
+				+'		</div>'
+				+'	</div>'
+				+'</div>'
+				+'<div id="op-images-status">'
+				+'	<img src="img/icon_web.svg" alt="Web" title="Web" /> <a id="status-web"><span class="status">&#x25CF;</span></a>'
+				+'	<img src="img/icon_mapillary.svg" alt="Mapillary" title="Mapillary" /> <a id="status-mapillary"><span class="status">&#x25CF;</span></a>'
+				+'	<img src="img/icon_flickr.svg" alt="Flickr" title="Flickr" /> <a id="status-flickr"><span class="status">&#x25CF;</span></a>'
+				+'</div>',
+			position: 'center',
+			className: 'control-window control-window-wide',
+			modal: true,
+			hideWhenClosed: true
+		}
+	);
+	
 	$("#tab-imgs-a").click(function() { controller.getView().getImagesView().changeTab("tab-imgs"); });
 	$("#tab-spheric-a").click(function() { controller.getView().getImagesView().changeTab("tab-spheric"); });
 	$("#spherical-nav-left").click(function() { controller.getView().getImagesView().previousSpherical(); });
@@ -2436,13 +2415,14 @@ var ImagesView = function(main) {
 		 * Set images tab
 		 */
 		var hasCommon = imagesData.length > 0;
-		var hasSpherical = this._sphericalImages.length > 0 && this._mainView.hasWebGL() && !this._mainView.isMobile();
+		var hasSpherical = this._sphericalImages.length > 0 && this._mainView.hasWebGL();
 		
 		//Common images
 		if(hasCommon) {
-			//Load base images
 			$("#tab-imgs-a").show();
-			Galleria.run('.galleria', { dataSource: imagesData, popupLinks: true, _toggleInfo: false });
+			
+			//Load base images
+			Galleria.run('.galleria', { dataSource: imagesData, popupLinks: true, _toggleInfo: false, carousel: false, thumbnails: false });
 		}
 		else {
 			$("#tab-imgs-a").hide();
@@ -2491,8 +2471,13 @@ var ImagesView = function(main) {
 		this.updateStatus("mapillary", status.mapillary, ft.getTag("mapillary"));
 		this.updateStatus("flickr", status.flickr);
 		
-		$("#op-images").removeClass("hide");
-		$("#op-images").addClass("show");
+		//Show window
+		this._window.show();
+		
+		if(hasSpherical) {
+			this._onWindowResize();
+			this._onWindowResize(); //Poor fix to set sphere size correctly
+		}
 	};
 	
  	/**
@@ -2504,6 +2489,10 @@ var ImagesView = function(main) {
  		$("#"+tab+"-a").addClass("selected");
 		$(".op-images-tab").hide();
  		$("#"+tab).show();
+		if(tab == "tab-spheric") {
+			this._onWindowResize();
+			this._onWindowResize();
+		}
  	};
 	
 	/**
@@ -2540,7 +2529,7 @@ var ImagesView = function(main) {
 				}
 				break;
 			case "unknown":
-				title = "圖片可能仍然讀取中";
+				title = "圖片可能仍在讀取中";
 				break;
 		}
 		link.prop("title", title);
@@ -2560,7 +2549,7 @@ var ImagesView = function(main) {
 		}
 		if(img.page != undefined) {
 			if(description != "") { description += " - "; }
-			description += '<a href="'+img.page+'" target="_blank">Page</a>';
+			description += '<a href="'+img.page+'" target="_blank">頁面</a>';
 		}
 		description += "<br />"+img.tag;
 		
@@ -2572,13 +2561,12 @@ var ImagesView = function(main) {
 	 */
 	
 	ImagesView.prototype._getSphereWidth = function() {
-		var w = $("#op-images > div").width();
+		var w = $("#spherical-content").width();
 		return (w > 0) ? w : CONFIG.view.images.spherical.width;
 	};
 	
 	ImagesView.prototype._getSphereHeight = function() {
-		var h = window.innerHeight * 0.8;
-		h = (h > 800) ? 700 : h - 100;
+		var h = $("#spherical-content").height();
 		return (h > 0) ? h : CONFIG.view.images.spherical.height;
 	};
 	
@@ -2628,11 +2616,11 @@ var ImagesView = function(main) {
 		this._container.appendChild(this._renderer.domElement);
 		
 		//Events
-		document.addEventListener('mousedown', this._onDocumentMouseDown.bind(this), false);
-		document.addEventListener('mousemove', this._onDocumentMouseMove.bind(this), false);
-		document.addEventListener('mouseup', this._onDocumentMouseUp.bind(this), false);
-		document.addEventListener('mousewheel', this._onDocumentMouseWheel.bind(this), false);
-		document.addEventListener('DOMMouseScroll', this._onDocumentMouseWheel.bind(this), false);
+		$("#spherical-content canvas").mousedown(this._onDocumentMouseDown.bind(this));
+		$("#spherical-content canvas").mousemove(this._onDocumentMouseMove.bind(this));
+		$("#spherical-content canvas").mouseup(this._onDocumentMouseUp.bind(this));
+		$("#spherical-content canvas").bind("mousewheel DOMMouseScroll", this._onDocumentMouseWheel.bind(this));
+		//document.addEventListener('DOMMouseScroll', this._onDocumentMouseWheel.bind(this), false);
 		document.addEventListener('dragover', function ( event ) {
 			event.preventDefault();
 			event.dataTransfer.dropEffect = 'copy';
@@ -2740,6 +2728,7 @@ var ImagesView = function(main) {
 	};
 
 	ImagesView.prototype._onDocumentMouseWheel = function( event ) {
+		event = event.originalEvent;
 		var prevFov = this._camera.fov;
 		// WebKit
 		if ( event.wheelDeltaY ) {
@@ -2788,13 +2777,31 @@ var ImagesView = function(main) {
 /**
  * The loading overlay panel component
  */
-var LoadingView = function() {
+var LoadingView = function(main) {
 //ATTRIBUTES
+	/** The main view **/
+	this._mainView = main;
+	
+	/** Leaflet window **/
+	this._window = null;
+	
 	/** Is loading ? **/
 	this._loading = false;
 	
 	/** The last timestamp **/
 	this._lastTime = 0;
+
+//CONSTRUCTOR
+	this._window = L.control.window(
+		this._mainView.getMapView().get(),
+		{
+			title: '<img id="spinner" src="img/icon_spinner.gif" height="32" />讀取中',
+			content: '',
+			modal: true,
+			position: 'center',
+			closeButton: false
+		}
+	);
 };
 	
 //ACCESSORS
@@ -2813,14 +2820,12 @@ var LoadingView = function() {
 	LoadingView.prototype.setLoading = function(loading) {
 		this._loading = loading;
 		if(loading) {
-			$("#op-loading-info li").remove();
-			$("#op-loading").removeClass("hide");
-			$("#op-loading").addClass("show");
+			this._window.show('center');
+			this._window.content('');
 			this._lastTime = (new Date()).getTime();
 		}
 		else {
-			$("#op-loading").removeClass("show");
-			$("#op-loading").addClass("hide");
+			this._window.hide();
 			$(document).trigger("loading_done");
 		}
 	};
@@ -2832,15 +2837,14 @@ var LoadingView = function() {
 	LoadingView.prototype.addLoadingInfo = function(info) {
 		//Timestamp
 		var currentTime = (new Date()).getTime();
-		$("#op-loading-info li:last").append(' <small>'+(currentTime-this._lastTime)+' ms</small>');
+
+		//Change content
+		var content = this._window.content();
+		if(content.length > 0) { content += ' <small>'+(currentTime-this._lastTime)+' ms</small><br />'; }
+		this._window.content(content+'- '+info);
+		this._window.show('center');
 		
-		//Add a new child in list, corresponding to the given message
-		var newLi = document.createElement("li");
-		$("#op-loading-info").append(newLi);
-		
-		//Add text to the added child
-		$("#op-loading-info li:last-child").html(info);
-		
+		//Update time
 		this._lastTime = currentTime;
 	};
 
@@ -2849,16 +2853,24 @@ var LoadingView = function() {
 /**
  * The about view
  */
-var AboutView = function() {
+var AboutView = function(main) {
+//ATTRIBUTES
+	/** The main view **/
+	this._mainView = main;
+
 //CONSTRUCTOR
-	//$("#op-about").hide();
 	$("#about-link").click(function() {
-		$("#op-about").toggleClass("hide show");
-	});
-	$("#about-close").click(function() {
-		$("#op-about").removeClass("show");
-		$("#op-about").addClass("hide");
-	});
+		L.control.window(
+			this._mainView.getMapView().get(),
+			{
+				title: '關於 OpenLevelUp!',
+				content: '本網站讓你能看到 <a href="http://openstreetmap.org">OpenStreetMap</a> 計畫中的<a href="http://wiki.openstreetmap.org/wiki/Simple_Indoor_Tagging">室內資料</a>。授權條款為 <a href="https://www.gnu.org/licenses/agpl.html">AGPL v3</a>。<br /><p style="text-align: center;"><a href="mailto:panieravide@riseup.net">聯絡</a> | <a href="https://github.com/PanierAvide/panieravide.github.io/tree/master/openlevelup">原始 GitHub repository</a> | <a href="https://github.com/jiazheng0609/jiazheng0609.github.io/tree/master/openlevelup">中文翻譯版 GitHub repository</a></p>',
+				modal: true,
+				position: 'center',
+				visible: true
+			}
+		);
+	}.bind(this));
 }
 
 
@@ -2866,10 +2878,27 @@ var AboutView = function() {
 /**
  * The messages stack component
  */
-var MessagesView = function() {
+var MessagesView = function(main) {
 //ATTRIBUTES
+	/** The main view **/
+	this._mainView = main;
+	
 	/** The amount of currently shown messages **/
 	this._nbMessages = 0;
+	
+	/** The leaflet window **/
+	this._window = null;
+
+//CONSTRUCTOR
+	this._window = L.control.window(
+		this._mainView.getMapView().get(),
+		{
+			className: 'control-window control-window-notitle',
+			content: '<ul id="infobox-list"></ul>',
+			position: 'bottomRight',
+			closeButton: false
+		}
+	);
 };
 
 //ACCESSORS
@@ -2899,13 +2928,13 @@ var MessagesView = function() {
 		var line = '<li class="'+type+'">'+msg+'</li>';
 		
 		if(this._nbMessages == 0) {
-			$("#infobox").show();
 			$("#infobox-list").append(line);
 		}
 		else {
 			$("#infobox-list li:first-child").before(line);
 		}
 		
+		this._window.show();
 		this._nbMessages++;
 		
 		//Remove that child after a delay
@@ -2913,7 +2942,10 @@ var MessagesView = function() {
 			$("#infobox-list li").last().remove();
 			this.decreaseNbMessages();
 			if(this.getNbMessages() == 0) {
-				$("#infobox").hide();
+				this._window.hide();
+			}
+			else {
+				this._window.show();
 			}
 		}.bind(this), 5000);
 	};
@@ -2936,11 +2968,9 @@ var NotesView = function(main) {
 	this._mainView = main;
 
 //CONSTRUCTOR
-	$("#notes-close").click(function() {
-		$("#op-notes").removeClass("show");
-		$("#op-notes").addClass("hide");
-	});
+	$("#sidebar-tab-notes").click(this.editNote.bind(this));
 	$("#note-send").click(controller.newNote.bind(controller));
+	$("#note-cancel").click(this.cancelNote.bind(this));
 };
 
 //ACCESSORS
@@ -2953,6 +2983,20 @@ var NotesView = function(main) {
 	
 //MODIFIERS
 	/**
+	 * Shows the export button
+	 */
+	NotesView.prototype.showButton = function() {
+		$("#sidebar-tab-notes").removeClass("disabled");
+	};
+	
+	/**
+	 * Hides the export button
+	 */
+	NotesView.prototype.hideButton = function() {
+		$("#sidebar-tab-notes").addClass("disabled");
+	};
+	
+	/**
 	 * Shows a given note in panel
 	 * @param e The leaflet event
 	 */
@@ -2960,12 +3004,6 @@ var NotesView = function(main) {
 		var note = this._mainView.getNotesData()[e.target.options.id];
 		
 		if(note != undefined) {
-			//Change title
-			$("#op-notes h2").html("Note #"+note.id);
-			$("#notes-status-txt").html(note.status);
-			$("#notes-status-icon").removeClass("ok bad").addClass((note.status == "closed") ? "ok" : "bad");
-			$("#notes-link").attr("href", "http://www.openstreetmap.org/note/"+note.id);
-			
 			//Add comments
 			var commentsHtml = "", comment, user;
 			for(var i=0, l=note.comments.length; i < l; i++) {
@@ -2977,8 +3015,18 @@ var NotesView = function(main) {
 								+'</div>';
 			}
 			
-			$("#op-notes-comments").html(commentsHtml);
-			$("#op-notes").addClass("show");
+			var lWindow = L.control.window(
+				this._mainView.getMapView().get(),
+				{
+					title: 'Note #'+note.id,
+					content: '<div class="op-notes-comments">'+commentsHtml+'</div>'
+					+'<div class="op-notes-footer">'
+					+'Status: <span class="notes-status-txt">'+note.status+'</span> | <a id="notes-link" href="http://www.openstreetmap.org/note/'+note.id+'">在 OSM.org 上查看</a>'
+					+'</div>',
+					position: 'center',
+					visible: true
+				}
+			);
 		}
 		else {
 			console.error("[Notes] Invalid ID: "+e.target.options.id);
@@ -2990,50 +3038,26 @@ var NotesView = function(main) {
 	 * Starts or stops to edit a new note
 	 */
 	NotesView.prototype.editNote = function() {
-		if(!$("#note-add").is(":visible")) {
+		if(
+			$("#sidebar-tab-notes").hasClass("active")
+			&& this._mainView.getMapView().getDraggableMarkerCoords() == null
+		) {
 			var dataZoom = this._mainView.getMapView().get().getZoom() >= CONFIG.view.map.data_min_zoom;
 			if(dataZoom) {
-				this._mainView.showCentralPanel("note-add");
 				this._mainView.getMapView().showDraggableMarker();
 				$("#note-txt").val("Level "+this._mainView.getLevelView().get()+": ");
 			}
 			else {
-				this._mainView.getMessagesView().displayMessage("你需要放大以新增一個註記", "alert");
+				this._mainView.collapseSidebar();
+				this._mainView.getMessagesView().displayMessage("你必須放大以新增一個註記", "alert");
 			}
 		}
-		else {
-			this._mainView.hideCentralPanel();
-			this._mainView.getMapView().hideDraggableMarker();
-		}
 	};
-
-
-
-/**
- * New note button for leaflet
- * @see https://gist.github.com/ns-1m/2935530
- */
-var NoteButton = L.Control.extend({
-	options: {
-		position: 'topright'
-	},
-
-	onAdd: function (map) {
-		//Button
-		var container = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-note');
-		container.style.backgroundColor = 'white';
-		container.style.width = '26px';
-		container.style.height = '26px';
-		
-		//Image
-		var image = L.DomUtil.create('img', '', container);
-		image.src = 'img/icon_note_add.png';
-		image.title = '在地圖上新增一個註記';
-
-		container.onclick = function(){
-			controller.getView().getNotesView().editNote();
-		}
-
-		return container;
-	}
-});
+	
+	/**
+	 * Cancels a note
+	 */
+	NotesView.prototype.cancelNote = function() {
+		this._mainView.collapseSidebar();
+		this._mainView.getMapView().hideDraggableMarker();
+	};
