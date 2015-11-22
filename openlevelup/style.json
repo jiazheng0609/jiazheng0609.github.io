@@ -1,6 +1,6 @@
 {
 	"styles": {
-		
+
 		"buildingpart|indoor|room": [
 			{
 				"name": "房間",
@@ -17,8 +17,13 @@
 			{
 				"name": "區域",
 				"description": "室內區域",
-				"onTags": [ { "indoor": "area|corridor" }, { "buildingpart": "corridor|hall" }, { "room": "corridor|entrance|hall|entry|gallery|collection" } ],
+				"onTags": [ { "indoor": "area|corridor" }, { "buildingpart": "corridor|hall" }, { "room": "corridor|hall|entry|gallery|collection" } ],
 				"style": { "color": "#AAAAAA", "opacity": 1, "weight": 0.8, "fillColor": "#EEEEEE", "fillOpacity": 1, "layer": -6, "label": "name", "labelStyle": "area" }
+			},
+			{
+				"name": "出入口",
+				"onTags": [ { "room": "entrance" } ],
+				"style": { "fillColor": "#EEEEEE" }
 			},
 			{
 				"name": "${room}",
@@ -96,7 +101,7 @@
 				"style": { "fillColor": "#A2A2A2" }
 			}
 		],
-		
+
 		"door|entrance": [
 			{
 				"name": "門",
@@ -124,7 +129,7 @@
 				"style": { "icon": "entrance_${entrance}.png" }
 			}
 		],
-		
+
 		"highway": [
 			{
 				"name": "路徑",
@@ -202,27 +207,28 @@
 				"style": { "icon": "arrow_down_1.png", "rotateIcon": true }
 			}
 		],
-		
-		
-		
+
+
+
 		"amenity": [
 			{
 				"name": "${amenity} (amenity)",
 				"description": "設施",
 				"onTags": [ { "amenity": "*" } ],
 				"style": {
-					"color": "#AAAAAA", "fillColor": "#FFDAAD", "icon": "amenity_${amenity}.png", "label": "name", "labelStyle": "amenity",
+					"fillColor": "#FFDAAD", "opacity": 1, "fillOpacity": 1, "icon": "amenity_${amenity}.png", "label": "name", "labelStyle": "amenity",
 					"iconAlias": { "seat": "bench" }
 				}
 			},
 			{
 				"description": "小設施",
-				"onTags": [ { "amenity": "bbq|drinking_water|atm|bench|seat|clock|photo_booth|post_box|recycling|vending_machine|waste_basket|ticket_validator|piano|telephone" } ],
-				"isDetail": true
+				"onTags": [ { "amenity": "bbq|drinking_water|atm|bench|seat|clock|photo_booth|post_box|recycling|vending_machine|waste_basket|ticket_validator|piano|telephone|parking_space|heater|showcase" } ],
+				"isDetail": true,
+				"style": { "color": "#FFBA66" }
 			},
 			{
-				"description": "設施的土地利用圖層",
-				"onTags": [ { "amenity": "school|college|university|hospital" } ],
+				"description": "為算是一種土地利用的設施設置圖層",
+				"onTags": [ { "amenity": "school|college|university|hospital|parking" } ],
 				"style": { "layer": -9 }
 			},
 			{
@@ -266,7 +272,7 @@
 				"style": { "icon": "bench_type_stand_up.png" }
 			}
 		],
-		
+
 		"barrier": [
 			{
 				"name": "${barrier} (障礙物)",
@@ -285,12 +291,12 @@
 			"style": { "color": "#DBA0A0", "fillColor": "#DBA0A0" }
 			},
 			{
-				"description": "Checkouts",
+				"description": "結帳處",
 				"onTags": [ { "barrier": "self_checkout|checkout" } ],
 				"style": { "fillColor": "#EEEEEE", "icon": "barrier_${barrier}.png" }
 			}
 		],
-		
+
 		"amenity|public_transport|room": [
 			{
 				"description": "便利設施",
@@ -298,8 +304,8 @@
 				"style": { "fillColor": "#E3C8E3" }
 			}
 		],
-		
-		
+
+
 		"emergency": [
 			{
 				"name": "${emergency}",
@@ -309,7 +315,7 @@
 				"style": { "icon": "emergency_${emergency}.png" }
 			}
 		],
-		
+
 		"man_made": [
 			{
 				"name": "柱子",
@@ -332,7 +338,7 @@
 				"style": { "icon": "man_made_lamp.png" }
 			}
 		],
-		
+
 		"railway|public_transport": [
 			{
 				"name": "${railway} (鐵路)",
@@ -353,13 +359,13 @@
 				"style": { "icon": "railway_${railway}.png" }
 			}
 		],
-		
+
 		"shop": [
 			{
 				"name": "${shop} (shop)",
 				"description": "商店",
 				"onTags": [ { "shop": "*" } ],
-				"style": { "color": "#AAAAAA", "fillColor": "#FFDAAD", "icon": "shopping_${shop}.png", "label": "name", "labelStyle": "shop" }
+				"style": { "color": "#AAAAAA", "fillColor": "#FFDAAD", "opacity": 1, "fillOpacity": 1, "icon": "shopping_${shop}.png", "label": "name", "labelStyle": "shop" }
 			},
 			{
 				"name": "商場",
@@ -368,7 +374,7 @@
 				"style" : { "color": "#AAAAAA", "opacity": 1, "weight": 0.8, "fillColor": "#EEEEEE", "fillOpacity": 1, "layer": -9 }
 			}
 		],
-		
+
 		"tourism": [
 			{
 				"name": "${tourism} (tourism)",
@@ -386,14 +392,17 @@
 				}
 			}
 			],
-			
+
 			"information": [
 			{
 				"name": "${information} (旅遊資訊)",
 				"description": "旅遊資訊圖示",
 				"onTags": [ { "information": "*" } ],
 				"isDetail": true,
-				"style": { "icon": "information_${information}.png" }
+				"style": {
+					"color": "#7583D9", "opacity": 1,
+					"icon": "information_${information}.png"
+				}
 			},
 			{
 				"description": "旅遊服務中心",
@@ -401,16 +410,14 @@
 				"isDetail": false
 			},
 			{
-				"name": "街道地圖",
-				"description": "地圖",
-				"onTags": [ { "map_type": "street|scheme" } ],
-				"style": { "icon": "map_type_${map_type}.png" }
-			
+				"description": "有支撐的資訊圖示",
+				"onTags": [ { "information": "board", "support": "*" } ],
+				"style": { "icon": "information_${information}_${support}.png" }
 			}
 		],
 
-		
-		
+
+
 		"advertising": [
 			{
 				"name": "${advertising}",
@@ -418,12 +425,20 @@
 				"onTags": [ { "advertising": "*" } ],
 				"isDetail": true,
 				"style": {
+					"color": "#5B5B5B", "opacity": 1,
 					"icon": "pub_${advertising}.png",
 					"iconAlias": { "sign": "poster_box", "wall_painting": "poster_box" }
 				}
+			},
+			{
+				"description": "有特定支撐的廣告圖示",
+				"onTags": [ { "advertising": "billboard", "support": "pole" } ],
+				"style": {
+					"icon": "pub_${advertising}_${support}.png"
+				}
 			}
 		],
-		
+
 		"aeroway": [
 			{
 				"name": "${aeroway}",
@@ -432,7 +447,7 @@
 				"style": { "icon": "aeroway_${aeroway}.png" }
 			}
 		],
-		
+
 		"historic": [
 			{
 				"name": "歷史文物",
@@ -448,7 +463,7 @@
 				"style": { "icon": "historic_tomb.png" }
 			}
 		],
-		
+
 		"landuse": [
 			{
 				"name": "草地",
@@ -457,7 +472,7 @@
 				"style": { "opacity": 0, "weight": 0, "fillColor": "#CFECA8", "fillOpacity": 1, "layer": -1 }
 			}
 		],
-		
+
 		"pole": [
 			{
 				"name": "地標",
@@ -467,7 +482,7 @@
 				"style": { "icon": "pole_landmark_sign.png", "label": "ref" }
 			}
 		],
-		
+
 		"power": [
 			{
 				"name": "發電自行車",
@@ -476,8 +491,8 @@
 				"isDetail": true,
 				"style": { "icon": "generator_type_bicycle.png" }
 			}
-		],		
-		
+		],
+
 		"department": [
 			{
 				"name": "${department} (部門)",
@@ -494,8 +509,8 @@
 					}
 			}
 		],
-		
-		
+
+
 		"building|building:part": [
 			{
 				"name": "建築物",
@@ -511,7 +526,7 @@
 			}
 		]
 	},
-	
+
 	"details": {
 		"access": {
 			"name": "限制",
@@ -565,6 +580,12 @@
 		"direction": {
 			"img": "icon_compass.svg",
 			"values": "direction"
+		},
+		"display": {
+			"name": "顯示方式",
+			"values": "icons",
+			"icons": "display_${v}.png",
+			"iconsAlias": { }
 		},
 		"email": {
 			"name": "@",
@@ -627,6 +648,12 @@
 			"img": "icon_compass.svg",
 			"values": "text"
 		},
+		"support": {
+			"name": "支撐",
+			"values": "icons",
+			"icons": "support_${v}.png",
+			"iconsAlias": { }
+		},
 		"vendor": {
 			"name": "With vendor",
 			"values": "icons",
@@ -679,6 +706,7 @@
 		"amenity_fast_food.png",
 		"amenity_firestation.png",
 		"amenity_fountain.png",
+		"amenity_heater.png",
 		"amenity_hospital.png",
 		"amenity_ice_cream.png",
 		"amenity_library.png",
@@ -701,6 +729,7 @@
 		"amenity_restaurant.png",
 		"amenity_school.png",
 		"amenity_shelter.png",
+		"amenity_showcase.png",
 		"amenity_taxi.png",
 		"amenity_telephone.png",
 		"amenity_theatre.png",
@@ -738,6 +767,11 @@
 		"barrier_toll_booth.png",
 		"barrier_turnstile.png",
 		"bench_type_stand_up.png",
+		"display_analog.png",
+		"display_electronic.png",
+		"display_paper.png",
+		"display_permanent.png",
+		"display_screen.png",
 		"door_no.png",
 		"door_sliding.png",
 		"door.png",
@@ -762,9 +796,18 @@
 		"icon_status_no.png",
 		"icon_status_yes.png",
 		"information_audioguide.png",
+		"information_board.png",
+		"information_board_ceiling.png",
+		"information_board_ground.png",
+		"information_board_pole.png",
+		"information_board_poster_box.png",
+		"information_board_wall_mounted.png",
 		"information_guidepost.png",
 		"information_map.png",
+		"information_office.png",
 		"information_price_checker.png",
+		"information_sign.png",
+		"information_terminal.png",
 		"laboratory_biology.png",
 		"laboratory_computer.png",
 		"laboratory_electronics.png",
@@ -784,6 +827,7 @@
 		"passage_stairs.png",
 		"pole_landmark_sign.png",
 		"pub_billboard.png",
+		"pub_billboard_pole.png",
 		"pub_flag.png",
 		"pub_poster_box.png",
 		"pub_screen.png",
@@ -851,6 +895,12 @@
 		"shopping_tobacco.png",
 		"shopping_toys.png",
 		"shopping_video_rental.png",
+		"support_ceiling.png",
+		"support_column.png",
+		"support_ground.png",
+		"support_pole.png",
+		"support_poster_box.png",
+		"support_wall_mounted.png",
 		"tourism_artwork.png",
 		"tourism_attraction.png",
 		"tourism_bed_and_breakfast.png",
