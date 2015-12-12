@@ -1,16 +1,16 @@
 /*
  * This file is part of OpenLevelUp!.
- * 
+ *
  * OpenLevelUp! is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * any later version.
- * 
+ *
  * OpenLevelUp! is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Affero General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Affero General Public License
  * along with OpenLevelUp!.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -72,26 +72,29 @@ var Ctrl = function() {
 //ATTRIBUTES
 	/** The data container **/
 	this._data = null;
-	
+
 	/** The cluster data container **/
 	this._clusterData = null;
-	
+
 	/** The mapillary data **/
 	this._mapillaryData = new MapillaryData();
-	
+
 	/** The OSM notes data **/
 	this._notesData = null;
-	
+
 	/** The download start time **/
 	this._downloadStart = null;
-	
+
 	/** The amount of requested external metadata via Ajax **/
 	this._nbExternalApiRequests = null;
-	
+
+	/** The routing graphs **/
+	this._graphs = {};
+
 	/** The current HTML view **/
 	this._view = null;
 };
-	
+
 //ACCESSORS
 	/**
 	 * @return The current view
@@ -99,28 +102,28 @@ var Ctrl = function() {
 	Ctrl.prototype.getView = function() {
 		return this._view;
 	};
-	
+
 	/**
 	 * @return The current map data object
 	 */
 	Ctrl.prototype.getData = function() {
 		return this._data;
 	};
-	
+
 	/**
 	 * @return The cluster data
 	 */
 	Ctrl.prototype.getClusterData = function() {
 		return this._clusterData;
 	};
-	
+
 	/**
 	 * @return The mapillary data
 	 */
 	Ctrl.prototype.getMapillaryData = function() {
 		return this._mapillaryData;
 	};
-	
+
 	/**
 	 * @return The OSM notes data
 	 */
@@ -134,7 +137,7 @@ var Ctrl = function() {
 	 */
 	Ctrl.prototype.init = function() {
 		this._view = new MainView(this);
-		
+
 		//Init leaflet map
  		this.onMapUpdate();
 	};
@@ -151,7 +154,7 @@ var Ctrl = function() {
 			controller.getView().updateLevelChanged();
 		}
 	};
-	
+
 	/**
 	 * Called when level down is needed
 	 */
@@ -160,7 +163,7 @@ var Ctrl = function() {
 			controller.getView().updateLevelChanged();
 		}
 	};
-	
+
 	/**
 	 * Called when level changes
 	 */
@@ -169,7 +172,7 @@ var Ctrl = function() {
 			controller.getView().updateLevelChanged();
 		}
 	};
-	
+
 	/**
 	 * Makes the map go to the given level
 	 * @param lvl The new level to display
@@ -197,7 +200,7 @@ var Ctrl = function() {
 			controller.getView().getMapView().setTileLayer(e.name);
 		}
 	};
-	
+
 	/**
 	 * This function is called when a layer was added on map
 	 */
@@ -208,7 +211,7 @@ var Ctrl = function() {
 		}
 		controller.getView().getMapView().changeTilesOpacity();
 	};
-	
+
 	/**
 	 * This function is called when map was moved or zoomed in/out.
 	 * @param force Force data download (optional, default: false)
@@ -219,19 +222,19 @@ var Ctrl = function() {
 		var map = this._view.getMapView().get();
 		var bbox = map.getBounds();
 		var zoom = map.getZoom();
-		
+
 		//Clear messages
 		this._view.getMessagesView().clear();
-		
+
 		//Check if zoom is high enough to download data
 		if(zoom >= CONFIG.view.map.cluster_min_zoom) {
 			this._view.getLoadingView().setLoading(true);
 			this._view.getLoadingView().addLoadingInfo("準備更新");
-			
+
 			//High zoom data download
 			if(zoom >= CONFIG.view.map.data_min_zoom) {
 				this._oldLevel = this._view.getLevelView().get();
-				
+
 				//Download data only if new BBox isn't contained in previous one
 				if(force
 					|| this._data == null
@@ -241,7 +244,7 @@ var Ctrl = function() {
 					//Resize BBox for small areas (avoid multiple Overpass API calls)
 					var diffZoom = zoom - CONFIG.view.map.data_min_zoom;
 					bbox = bbox.pad(1.1 + 0.5 * diffZoom);
-					
+
 					//Download data
 					this.downloadData("data", bbox);
 					//When download is done, endMapUpdate() will be called.
@@ -264,7 +267,7 @@ var Ctrl = function() {
 						var diffZoom = zoom - CONFIG.view.map.cluster_min_zoom;
 						bbox = bbox.pad(1.1 + 0.5 * diffZoom);
 					}
-					
+
 					//Download data
 					this.downloadData("cluster", bbox);
 					//When download is done, endMapClusterUpdate() will be called.
@@ -280,7 +283,7 @@ var Ctrl = function() {
 			this._view.updateMapMoved();
 		}
 	};
-	
+
 	/**
 	 * This function is called after data download finishes
 	 */
@@ -289,7 +292,7 @@ var Ctrl = function() {
 		this._view.updateMapMoved();
 		this._view.getLoadingView().setLoading(false);
 	};
-	
+
 	/**
 	 * This function is called after cluster data download finishes
 	 */
@@ -311,12 +314,13 @@ var Ctrl = function() {
 	 */
 	Ctrl.prototype.downloadData = function(type, bbox) {
 		this._downloadStart = (new Date()).getTime();
-		
+		this._resetRouting();
+
 		var oapiRequest = null;
 		var bounds = boundsString(bbox);
-		
+
 		this._view.getLoadingView().addLoadingInfo("要求 Overpass API");
-		
+
 		//Prepare request depending of type
 		if(type == "cluster") {
 			oapiRequest = '[out:json][timeout:25][bbox:'+bounds+'];(way["indoor"]["indoor"!="yes"]["level"];way["buildingpart"]["level"];);out ids center;';
@@ -332,7 +336,7 @@ var Ctrl = function() {
 			function(data) {
 				//console.log("[Time] Overpass download: "+((new Date()).getTime() - this._downloadStart));
 				this.getView().getLoadingView().addLoadingInfo("處理已接收資料");
-				
+
 				if(type == "cluster") {
 					this._clusterData = new OSMClusterData(bbox, data);
 					this.getView().getMapView().resetVars();
@@ -344,17 +348,17 @@ var Ctrl = function() {
 
 					this.getView().getLoadingView().addLoadingInfo("下載照片中繼資料");
 					this._nbExternalApiRequests = 0;
-					
+
 					//Download OSM notes
 					this.downloadNotes(bbox);
-					
+
 					//Download Flickr data
 					this.downloadFlickr(bbox);
-					
+
 					//Request mapillary data
 					var mapillaryKeys = this._data.getMapillaryKeys();
 					var mapillaryNb = mapillaryKeys.length;
-					
+
 					for(var i=0; i < mapillaryNb; i++) {
 						var key = mapillaryKeys[i];
 						if(!this._mapillaryData.has(key)) {
@@ -368,7 +372,7 @@ var Ctrl = function() {
 			"json")
 		.fail(controller.onDownloadFail.bind(this));
 	};
-	
+
 	/**
 	 * This function is called when data download fails
 	 */
@@ -376,13 +380,13 @@ var Ctrl = function() {
 		this.getView().getLoadingView().setLoading(false);
 		this.getView().getMessagesView().displayMessage("下載資料時發生錯誤", "error");
 	};
-	
+
 	/**
 	 * Checks if all metadata for external data have been retrieved, and if so ends map update.
 	 */
 	Ctrl.prototype.checkExternalRequestsDone = function(almost) {
 		almost = almost || false;
-		
+
 		if(this._nbExternalApiRequests == 0) {
 			if(almost) {
 				this.endMapUpdate();
@@ -412,7 +416,7 @@ var Ctrl = function() {
 	Ctrl.prototype.downloadFlickr = function(bbox) {
 		var params = 'method=flickr.photos.search&api_key='+CONFIG.images.flickr.key+'&bbox='+bbox.toBBoxString()+'&machine_tags=osm:&has_geo=1&extras=machine_tags,url_c,date_taken,owner_name&format=json&nojsoncallback=1';
 		var url = CONFIG.images.flickr.api+params;
-		
+
 		//Download
 		this._nbExternalApiRequests++;
 		$.ajax({
@@ -422,7 +426,7 @@ var Ctrl = function() {
 			success: this.setFlickrData.bind(this)
 		}).fail(this.onFlickrDownloadFail.bind(this));
 	};
-	
+
 	/**
 	 * Processes the received Flickr data, and updates the model objects
 	 * @param data The Flickr data, as JSON
@@ -433,25 +437,25 @@ var Ctrl = function() {
 				if(data.stat == "ok") {
 					var associatedPhotos = 0;
 					var osmKeyRegex = /^(osm:)(node|way|relation)$/;
-					
+
 					//Read photos
 					var photoList = data.photos.photo;
 					for(var i=0; i < photoList.length; i++) {
 						var photo = photoList[i];
-						
+
 						//Update objects according to machine tags
 						var machineTags = photo.machine_tags.split(' ');
 						for(var j=0; j < machineTags.length; j++) {
 							var machineTag = machineTags[j].split('=');
 							var key = machineTag[0];
 							var value = machineTag[1];
-							
+
 							//Check if valid key and value
 							if(key.match(osmKeyRegex) && !isNaN(value)) {
 								//Kind of object
 								var type = key.split(':')[1];
 								var ftId = type+'/'+value;
-								
+
 								//Update given object
 								var feature = this._data.getFeature(ftId);
 								if(feature != undefined) {
@@ -468,7 +472,7 @@ var Ctrl = function() {
 							}
 						}
 					}
-					
+
 					console.log("[Flickr] Done processing images ("+associatedPhotos+" associated)");
 				}
 				else {
@@ -485,7 +489,7 @@ var Ctrl = function() {
 		}
 		this._nbExternalApiRequests--;
 	};
-	
+
 	/**
 	 * This function is called when data download fails
 	 */
@@ -506,7 +510,7 @@ var Ctrl = function() {
 		isLast = isLast || false;
 		var params = 'g/'+id+'?client_id='+CONFIG.images.mapillary.clientId;
 		var url = CONFIG.images.mapillary.api+params;
-		
+
 		//Download
 		this._nbExternalApiRequests++;
 		$.get(
@@ -515,7 +519,7 @@ var Ctrl = function() {
 			'json'
 		).fail(controller.onMapillaryDownloadFail.bind(this));
 	};
-	
+
 	/**
 	 * Processes the received Mapillary data, and updates the images data in model
 	 * @param data The Flickr data, as JSON
@@ -541,7 +545,7 @@ var Ctrl = function() {
 		}
 		this._nbExternalApiRequests--;
 	};
-	
+
 	/**
 	 * This function is called when data download fails
 	 */
@@ -560,7 +564,7 @@ var Ctrl = function() {
 	Ctrl.prototype.downloadNotes = function(bbox) {
 		var params = 'notes?bbox='+bbox.toBBoxString();
 		var url = CONFIG.osm.api+params;
-		
+
 		//Download
 		this._nbExternalApiRequests++;
 		$.ajax({
@@ -571,7 +575,7 @@ var Ctrl = function() {
 			success: this.setNotesData.bind(this)
 		}).fail(this.onNotesDownloadFail.bind(this));
 	};
-	
+
 	/**
 	 * Processes the received Notes data
 	 * @param data The OSM notes data, as JSON
@@ -585,7 +589,7 @@ var Ctrl = function() {
 		}
 		this._nbExternalApiRequests--;
 	};
-	
+
 	/**
 	 * This function is called when notes data download fails
 	 */
@@ -600,17 +604,17 @@ var Ctrl = function() {
 	Ctrl.prototype.newNote = function() {
 		//Retrieve note data
 		var text = this._view.getNotesView().getNewNoteText().trim();
-		
+
 		//Check if not empty
 		var textCheck = text.split(':');
 		if(text.length > 0 && (textCheck.length == 1 || textCheck[1].trim().length > 0)) {
 			//Check coordinates
 			var coords = this._view.getMapView().getDraggableMarkerCoords();
-			
+
 			if(coords != null) {
 				//Create URL
 				var url = CONFIG.osm.api+"notes?lat="+coords.lat+"&lon="+coords.lng+"&text="+text;
-				
+
 				//Send note to OSM
 				$.post(
 					url,
@@ -627,7 +631,7 @@ var Ctrl = function() {
 			this._view.getMessagesView().displayMessage("你的註記是空白的", "alert");
 		}
 	};
-	
+
 	/**
 	 * Success function for note sending
 	 */
@@ -635,14 +639,14 @@ var Ctrl = function() {
 		this._view.getMessagesView().displayMessage("你的註記已成功發送", "info");
 		this._view.getMapView().hideDraggableMarker();
 		this._view.collapseSidebar();
-		
+
 		//Add given data to NotesData
 		this._notesData.parse(data);
-		
+
 		//Refresh map
 		this._view.updateNoteAdded();
 	};
-	
+
 	/**
 	 * Fail function for note sending
 	 */
@@ -650,4 +654,43 @@ var Ctrl = function() {
 		this._view.getMessagesView().displayMessage("傳送註記時發生錯誤", "error");
 		this._view.getMapView().hideDraggableMarker();
 		this._view.collapseSidebar();
+	};
+
+/***************************
+ * Routing related methods *
+ ***************************/
+
+	/**
+	 * Starts routing
+	 * @param mode The routing mode (see CONFIG.routing)
+	 * @param startPt The start coordinates
+	 * @param startLvl The start level
+	 * @param endPt The end coordinates
+	 * @param endLvl The end level
+	 */
+	Ctrl.prototype.startRouting = function(mode, startPt, startLvl, endPt, endLvl) {
+		//Create graph if not available
+		if(this._graphs[mode] == undefined) {
+			this._graphs[mode] = new Graph();
+			this._graphs[mode].createFromOSMData(this._data, CONFIG.routing[mode].avoid);
+		}
+
+		//Launch routing
+		try {
+			var path = this._graphs[mode].findShortestPath(startPt, startLvl, endPt, endLvl);
+			this.getView().getRoutingView().showRoute(path);
+		}
+		catch(e) {
+			this.getView().getMessagesView().displayMessage("找不到路徑", "alert");
+			console.log(e);
+			this.getView().getRoutingView().showRoute(null);
+		}
+	};
+
+	/**
+	 * Resets routing view and model
+	 */
+	Ctrl.prototype._resetRouting = function() {
+		this._graphs = {};
+		this.getView().getRoutingView().reset();
 	};
