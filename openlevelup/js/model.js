@@ -1,16 +1,16 @@
 /*
  * This file is part of OpenLevelUp!.
- *
+ * 
  * OpenLevelUp! is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * any later version.
- *
+ * 
  * OpenLevelUp! is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Affero General Public License for more details.
- *
+ * 
  * You should have received a copy of the GNU Affero General Public License
  * along with OpenLevelUp!.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -27,56 +27,63 @@
  * The OSM global data container.
  * It contains the parsed object from Overpass call.
  */
-var OSMData = function(bbox, data) {
+var OSMData = function(bbox, data, keepNoLevel) {
 //ATTRIBUTES
 	/** The feature objects **/
 	this._features = null;
-
+	
 	/** The available levels **/
 	this._levels = [];
-
+	
 	/** The bounding box of the data **/
 	this._bbox = bbox;
-
+	
 	/** The names of objects, by level **/
 	this._names = new Object();
-
+	
 	/** The original data **/
 	this._data = data;
 
 //CONSTRUCTOR
+	keepNoLevel = keepNoLevel || false;
 	var timeStart = new Date().getTime();
-
+	
 	//Parse OSM data
 	var geojson = parseOsmData(data);
-
+	
 	//Create features
 	this._features = new Object();
 
-	var id, f, i, currentFeature, ftLevels, lvlId, lvl;
+	var id, f, i, currentFeature, ftLevels, lvlId, lvl, nbLevels;
 	for(i=0; i < geojson.features.length; i++) {
 		f = geojson.features[i];
 		id = f.id;
 		currentFeature = new Feature(f);
-
+		nbLevels = currentFeature.onLevels().length;
+		
 		if(this._features[id] == undefined) {
-			this._features[id] = currentFeature;
-
-			//Add levels to list
-			ftLevels = currentFeature.onLevels();
-			$.merge(this._levels, ftLevels);
-
-			//Add name to list
-			if(currentFeature.hasTag("name")) {
-				for(var lvlId=0; lvlId < ftLevels.length; lvlId++) {
-					lvl = ftLevels[lvlId];
-
-					//Create given level in names if needed
-					if(this._names[lvl] == undefined) {
-						this._names[lvl] = [];
+			if(keepNoLevel || nbLevels > 0) {
+				//Set default level if no one defined
+				if(nbLevels == 0) { currentFeature._onLevels = [ 0 ]; }
+				
+				this._features[id] = currentFeature;
+				
+				//Add levels to list
+				ftLevels = currentFeature.onLevels();
+				$.merge(this._levels, ftLevels);
+				
+				//Add name to list
+				if(currentFeature.hasTag("name")) {
+					for(var lvlId=0; lvlId < ftLevels.length; lvlId++) {
+						lvl = ftLevels[lvlId];
+						
+						//Create given level in names if needed
+						if(this._names[lvl] == undefined) {
+							this._names[lvl] = [];
+						}
+						
+						this._names[lvl][currentFeature.getTag("name")] = currentFeature;
 					}
-
-					this._names[lvl][currentFeature.getTag("name")] = currentFeature;
 				}
 			}
 		}
@@ -85,7 +92,7 @@ var OSMData = function(bbox, data) {
 			// console.log(currentFeature.getTags());
 		// }
 	}
-
+	
 	//Sort and remove duplicates in levels array
 	this._levels = this._levels.sort(sortNumberArray).filter(rmDuplicatesSortedArray);
 
@@ -98,7 +105,7 @@ var OSMData = function(bbox, data) {
 	ftLevels = null;
 	lvlId = null;
 	lvl = null;
-
+	
 	//console.log("[Time] Model parsing: "+((new Date().getTime()) - timeStart));
 };
 
@@ -109,35 +116,35 @@ var OSMData = function(bbox, data) {
 	OSMData.prototype.getBBox = function() {
 		return this._bbox;
 	};
-
+	
 	/**
 	 * @return True if the object was initialized
 	 */
 	OSMData.prototype.isInitialized = function() {
 		return this._features != null;
 	};
-
+	
 	/**
 	 * @return The levels contained in data
 	 */
 	OSMData.prototype.getLevels = function() {
 		return this._levels;
 	};
-
+	
 	/**
 	 * @return The read names
 	 */
 	OSMData.prototype.getNames = function() {
 		return this._names;
 	};
-
+	
 	/**
 	 * @return The original data
 	 */
 	OSMData.prototype.getData = function() {
 		return this._data;
 	};
-
+	
 	/**
 	 * @param id The feature OSM ID
 	 * @return The feature object
@@ -145,14 +152,14 @@ var OSMData = function(bbox, data) {
 	OSMData.prototype.getFeature = function(id) {
 		return this._features[id];
 	};
-
+	
 	/**
 	 * @return The features as an array
 	 */
 	OSMData.prototype.getFeatures = function() {
 		return this._features;
 	};
-
+	
 	/**
 	 * @return The mapillary keys in data
 	 */
@@ -161,11 +168,11 @@ var OSMData = function(bbox, data) {
 		var ftId, feature, i, k, ftTags, mapillaryVal;
 		var mapillaryRegex = /^mapillary.*$/;
 		var mapillaryValRegex = /^[\w\-]+$/;
-
+		
 		for(ftId in this._features) {
 			feature = this._features[ftId];
 			ftTags = feature.getTags();
-
+			
 			for(k in ftTags) {
 				if(k.match(mapillaryRegex)) {
 					mapillaryVal = ftTags[k];
@@ -203,14 +210,14 @@ var OSMClusterData = function(bbox, data) {
 	OSMClusterData.prototype.get = function() {
 		return this._data;
 	};
-
+	
 	/**
 	 * @return The data bounding box
 	 */
 	OSMClusterData.prototype.getBBox = function() {
 		return this._bbox;
 	};
-
+	
 	/**
 	 * @return True if the object was initialized
 	 */
@@ -238,7 +245,7 @@ var MapillaryData = function() {
 	MapillaryData.prototype.has = function(key) {
 		return this._data[key] != undefined;
 	};
-
+	
 	/**
 	 * @param key The image key
 	 * @return The image data
@@ -246,7 +253,7 @@ var MapillaryData = function() {
 	MapillaryData.prototype.get = function(key) {
 		return this._data[key];
 	};
-
+	
 	/**
 	 * Is the image spherical ?
 	 * @param key The image key
@@ -255,28 +262,28 @@ var MapillaryData = function() {
 	MapillaryData.prototype.isSpherical = function(key) {
 		return this._data[key].special_type == "pano";
 	};
-
+	
 	/**
 	 * @return the picture author
 	 */
 	MapillaryData.prototype.getAuthor = function(key) {
 		return this._data[key].username;
 	};
-
+	
 	/**
 	 * @return The capture date (as Unix timestamp)
 	 */
 	MapillaryData.prototype.getDate = function(key) {
 		return this._data[key].captured_at;
 	};
-
+	
 	/**
 	 * @return The capture angle (in degrees, North = 0°)
 	 */
 	MapillaryData.prototype.getAngle = function(key) {
 		return this._data[key].ca;
 	};
-
+	
 //MODIFIERS
 	/**
 	 * Adds a new information set
@@ -308,7 +315,7 @@ var NotesData = function(d) {
 	NotesData.prototype.get = function() {
 		return this._notes;
 	};
-
+	
 //MODIFIERS
 	/**
 	 * Parses the given XML and adds extracted data
@@ -325,7 +332,7 @@ var NotesData = function(d) {
 				$(this).find('date_created').text(),
 				$(this).find('status').text()
 			);
-
+			
 			//Add comments
 			$(this).find('comment').each(function() {
 				_self.addComment(
@@ -339,7 +346,7 @@ var NotesData = function(d) {
 			});
 		});
 	};
-
+	
 	/**
 	 * Adds a new note in data
 	 * @param id The note ID in OSM
@@ -352,7 +359,7 @@ var NotesData = function(d) {
 	NotesData.prototype.add = function(id, lat, lon, dateCreated, status) {
 		return this._notes.push({ id: id, lat: lat, lon: lon, date: dateCreated, status: status, comments: [] }) - 1;
 	};
-
+	
 	/**
 	 * Adds a new comment in a note
 	 * @param id The note ID in OpenLevelUp
@@ -378,22 +385,22 @@ var Feature = function(f) {
 
 	/** The OSM ID (for example "node/123456") **/
 	this._id = f.id;
-
+	
 	/** The levels in which this object is present **/
 	this._onLevels = null;
-
+	
 	/** The OSM keys **/
 	this._keys = null;
-
+	
 	/** The OSM object tags **/
 	this._tags = f.properties.tags;
-
+	
 	/** The feature geometry **/
 	this._geometry = null;
-
+	
 	/** The feature style **/
 	this._style = null;
-
+	
 	/** The feature images (if any) **/
 	this._images = undefined;
 
@@ -404,7 +411,7 @@ var Feature = function(f) {
 	this._keys = Object.keys(this._tags);
 	this._style = new FeatureStyle(this);
 	this._geometry = new FeatureGeometry(f.geometry);
-
+	
 	/*
 	 * Find a name for this object
 	 */
@@ -417,12 +424,12 @@ var Feature = function(f) {
 	else {
 		this._name = this._style.getName();
 	}
-
+	
 	/*
 	 * Parse levels
 	 */
 	this._onLevels = listLevels(this._tags, f.properties.relations);
-
+	
 	/*
 	 * Check if the feature could have images
 	 */
@@ -436,28 +443,28 @@ var Feature = function(f) {
 	Feature.prototype.getName = function() {
 		return this._name;
 	};
-
+	
 	/**
 	 * @return The OSM Id
 	 */
 	Feature.prototype.getId = function() {
 		return this._id;
 	};
-
+	
 	/**
 	 * @return True if the feature has related images
 	 */
 	Feature.prototype.hasImages = function() {
 		return this._images != null && (this._images.hasValidImages() || this._images.hasValidSpherical());
 	};
-
+	
 	/**
 	 * @return The array of levels where the feature is available
 	 */
 	Feature.prototype.onLevels = function() {
 		return this._onLevels;
 	};
-
+	
 	/**
 	 * @param lvl The level to look for
 	 * @return True if the feature is present in the given level
@@ -465,14 +472,14 @@ var Feature = function(f) {
 	Feature.prototype.isOnLevel = function(lvl) {
 		return contains(this._onLevels, lvl);
 	};
-
+	
 	/**
 	 * @return The OSM tags
 	 */
 	Feature.prototype.getTags = function() {
 		return this._tags;
 	};
-
+	
 	/**
 	 * @param key The OSM key
 	 * @return The corresponding OSM value, or undefined if not found
@@ -480,7 +487,7 @@ var Feature = function(f) {
 	Feature.prototype.getTag = function(key) {
 		return this._tags[key];
 	};
-
+	
 	/**
 	 * @param key The OSM key
 	 * @return True if this key is defined in this object
@@ -488,7 +495,7 @@ var Feature = function(f) {
 	Feature.prototype.hasTag = function(key) {
 		return contains(this._keys, key);
 	};
-
+	
 	/**
 	 * @return The feature images object or null if no available images
 	 */
@@ -498,14 +505,14 @@ var Feature = function(f) {
 		}
 		return this._images;
 	};
-
+	
 	/**
 	 * @return The feature style
 	 */
 	Feature.prototype.getStyle = function() {
 		return this._style;
 	};
-
+	
 	/**
 	 * @return The feature geometry
 	 */
@@ -531,14 +538,14 @@ var FeatureGeometry = function(fGeometry) {
 	FeatureGeometry.prototype.get = function() {
 		return this._geom;
 	};
-
+	
 	/**
 	 * @return The centroid, as LatLng
 	 */
 	FeatureGeometry.prototype.getCentroid = function() {
 		var result = null;
 		var type = this._geom.type;
-
+		
 		if(type == "Point") {
 			result = this._geom.coordinates;
 		}
@@ -549,7 +556,7 @@ var FeatureGeometry = function(fGeometry) {
 			var maxlat = minlat;
 			var length = this._geom.coordinates.length;
 			var coord;
-
+			
 			for(var i=1; i < length; i++) {
 				coord = this._geom.coordinates[i];
 				if(minlon > coord[0]) { minlon = coord[0]; }
@@ -557,7 +564,7 @@ var FeatureGeometry = function(fGeometry) {
 				if(minlat > coord[1]) { minlat = coord[1]; }
 				else if(maxlat < coord[1]) { maxlat = coord[1]; }
 			}
-
+			
 			result = [ minlon + (maxlon-minlon)/2, minlat + (maxlat-minlat)/2 ];
 		}
 		else if(type == "Polygon") {
@@ -567,7 +574,7 @@ var FeatureGeometry = function(fGeometry) {
 			var maxlat = minlat;
 			var length = this._geom.coordinates[0].length;
 			var coord;
-
+			
 			for(var i=1; i < length-1; i++) {
 				coord = this._geom.coordinates[0][i];
 				if(minlon > coord[0]) { minlon = coord[0]; }
@@ -575,7 +582,7 @@ var FeatureGeometry = function(fGeometry) {
 				if(minlat > coord[1]) { minlat = coord[1]; }
 				else if(maxlat < coord[1]) { maxlat = coord[1]; }
 			}
-
+			
 			result = [ minlon + (maxlon-minlon)/2, minlat + (maxlat-minlat)/2 ];
 		}
 		else if(type == "MultiPolygon") {
@@ -585,7 +592,7 @@ var FeatureGeometry = function(fGeometry) {
 			var maxlat = minlat;
 			var length = this._geom.coordinates[0][0].length;
 			var coord;
-
+			
 			for(var i=1; i < length-1; i++) {
 				coord = this._geom.coordinates[0][0][i];
 				if(minlon > coord[0]) { minlon = coord[0]; }
@@ -593,16 +600,16 @@ var FeatureGeometry = function(fGeometry) {
 				if(minlat > coord[1]) { minlat = coord[1]; }
 				else if(maxlat < coord[1]) { maxlat = coord[1]; }
 			}
-
+			
 			result = [ minlon + (maxlon-minlon)/2, minlat + (maxlat-minlat)/2 ];
 		}
 		else {
 			console.log("Unknown type: "+this._geom.type);
 		}
-
+		
 		return L.latLng(result[1], result[0]);
 	};
-
+	
 	/**
 	 * Get this object centroid as a string
 	 * @return "lat, lon"
@@ -611,25 +618,25 @@ var FeatureGeometry = function(fGeometry) {
 		var c = this.getCentroid();
 		return c.lat+", "+c.lng;
 	};
-
+	
 	/**
 	 * @return The geometry type (GeoJSON values)
 	 */
 	FeatureGeometry.prototype.getType = function() {
 		return this._geom.type;
 	};
-
+	
 	/**
 	 * @return The geometry as leaflet format (LatLng)
 	 */
 	FeatureGeometry.prototype.getLatLng = function() {
 		var result = null;
-
+		
 		switch(this._geom.type) {
 			case "Point":
 				result = L.latLng(this._geom.coordinates[1], this._geom.coordinates[0]);
 				break;
-
+				
 			case "LineString":
 				result = [];
 				var coords;
@@ -638,7 +645,7 @@ var FeatureGeometry = function(fGeometry) {
 					result[i] = L.latLng(coords[1], coords[0]);
 				}
 				break;
-
+				
 			case "Polygon":
 				result = [];
 				var coords;
@@ -650,7 +657,7 @@ var FeatureGeometry = function(fGeometry) {
 					}
 				}
 				break;
-
+				
 			case "MultiPolygon":
 				result = [];
 				var coords;
@@ -665,14 +672,14 @@ var FeatureGeometry = function(fGeometry) {
 					}
 				}
 				break;
-
+				
 			default:
 				console.log("Unknown type: "+this._geom.type);
 		}
-
+		
 		return result;
 	};
-
+	
 	/**
 	 * Returns the bounding box
 	 * @return The bounding box
@@ -687,13 +694,13 @@ var FeatureGeometry = function(fGeometry) {
 				minlon = this._geom.coordinates[0];
 				maxlon = this._geom.coordinates[0];
 				break;
-
+				
 			case "LineString":
 				minlat = this._geom.coordinates[0][1];
 				maxlat = this._geom.coordinates[0][1];
 				minlon = this._geom.coordinates[0][0];
 				maxlon = this._geom.coordinates[0][0];
-
+				
 				for(var i = 1; i < this._geom.coordinates.length; i++) {
 					var coords = this._geom.coordinates[i];
 					if(coords[0] < minlon) { minlon = coords[0]; }
@@ -702,13 +709,13 @@ var FeatureGeometry = function(fGeometry) {
 					else if(coords[1] > maxlat) { maxlat = coords[1]; }
 				}
 				break;
-
+				
 			case "Polygon":
 				minlat = this._geom.coordinates[0][0][1];
 				maxlat = this._geom.coordinates[0][0][1];
 				minlon = this._geom.coordinates[0][0][0];
 				maxlon = this._geom.coordinates[0][0][0];
-
+				
 				var coords;
 				for(var i = 0; i < this._geom.coordinates.length; i++) {
 					for(var j=0; j < this._geom.coordinates[i].length; j++) {
@@ -720,13 +727,13 @@ var FeatureGeometry = function(fGeometry) {
 					}
 				}
 				break;
-
+				
 			case "MultiPolygon":
 				minlat = this._geom.coordinates[0][0][1];
 				maxlat = this._geom.coordinates[0][0][1];
 				minlon = this._geom.coordinates[0][0][0];
 				maxlon = this._geom.coordinates[0][0][0];
-
+				
 				var coords;
 				for(var i = 0; i < this._geom.coordinates.length; i++) {
 					for(var j=0; j < this._geom.coordinates[i].length; j++) {
@@ -740,11 +747,11 @@ var FeatureGeometry = function(fGeometry) {
 					}
 				}
 				break;
-
+				
 			default:
 				console.log("Unknown type: "+this._geom.type);
 		}
-
+		
 		return L.latLngBounds(L.latLng(minlat, minlon), L.latLng(maxlat, maxlon));
 	};
 
@@ -757,19 +764,19 @@ var FeatureStyle = function(feature) {
 //ATTRIBUTES
 	/** The style **/
 	this._style = new Object();
-
+	
 	/** The feature icon **/
 	this._icon = undefined;
-
+	
 	/** The style name **/
 	this._name = "Object";
 
 	/** Is this style describing a detailed object ? **/
 	this._isDetail = false;
-
+	
 	/** The feature **/
 	this._feature = feature;
-
+	
 	this._init();
 };
 
@@ -781,19 +788,19 @@ var FeatureStyle = function(feature) {
 			if(this._hasKey(mainKey)) {
 				for(var i=0, until=STYLE.styles[mainKey].length; i < until; i++) {
 					style = STYLE.styles[mainKey][i];
-
+					
 					/*
 					 * Check if style is applyable
 					 */
 					applyable = false;
-
+					
 					for(var j=0, until2 = style.onTags.length; j < until2; j++) {
 						tagList = style.onTags[j];
 						applyable = true;
-
+						
 						for(key in tagList) {
 							val = tagList[key];
-
+							
 							//If this rule is not applyable, stop
 							if(!this._feature.hasTag(key)) {
 								applyable = false;
@@ -810,7 +817,7 @@ var FeatureStyle = function(feature) {
 						//If style still applyable after looking for all tags in a taglist, then it's applyable
 						if(applyable) { break; }
 					}
-
+					
 					//If applyable, we update the result style
 					if(applyable) {
 						if(style.name != undefined) {
@@ -819,7 +826,7 @@ var FeatureStyle = function(feature) {
 						if(style.isDetail != undefined) {
 							this._isDetail = style.isDetail;
 						}
-
+						
 						for(param in style.style) {
 							if(style.style[param] != undefined && (param != "icon" || this._createIconUrl(style.style) != null)) {
 								this._style[param] = style.style[param];
@@ -829,10 +836,10 @@ var FeatureStyle = function(feature) {
 				}
 			}
 		}
-
+		
 		//Change icon=no into undefined
 		if(this._style.icon == "none") { this._style.icon = undefined; }
-
+		
 		//Clean tmp objects
 		applyable = null;
 		tagList = null;
@@ -848,7 +855,7 @@ var FeatureStyle = function(feature) {
 	FeatureStyle.prototype.get = function() {
 		return this._style;
 	};
-
+	
 	/**
 	 * @return True if this style has an associated icon
 	 */
@@ -862,7 +869,7 @@ var FeatureStyle = function(feature) {
 	FeatureStyle.prototype.isDetail = function() {
 		return this._isDetail;
 	};
-
+	
 	/**
 	 * Get the complete icon name, in particular when style contains a tag variable.
 	 * @return The icon URL
@@ -871,39 +878,39 @@ var FeatureStyle = function(feature) {
 		if(this._icon == undefined) {
 			this._icon = this._createIconUrl(this._style);
 		}
-
+		
 		return this._icon;
 	};
-
+	
 	/**
 	 * Replaces if needed the variable tag in an icon URL
 	 */
 	FeatureStyle.prototype._createIconUrl = function(style) {
 		var regex = /\$\{(\w+)\}/;
 		var icon = style.icon;
-
+		
 		//Replace all tags in icon name
 		while(regex.test(icon)) {
 			//Replace tag name with actual tag value
 			var tagName = regex.exec(icon)[1];
 			var tagValue = this._feature.getTag(tagName);
-
+			
 			//If an alias exists for the given value, replace
 			if(style.iconAlias != undefined && style.iconAlias[tagValue] != undefined) {
 				tagValue = style.iconAlias[tagValue];
 			}
-
+			
 			icon = icon.replace(regex, tagValue);
 		}
-
+		
 		//Check if icon file exists (to avoid exotic values)
 		if(!contains(STYLE.images, icon) && icon != "none") {
 			icon = null;
 		}
-
+		
 		return icon;
 	};
-
+	
 	/**
 	 * Checks if the feature has one of the given key defined
 	 */
@@ -916,7 +923,7 @@ var FeatureStyle = function(feature) {
 		}
 		return false;
 	};
-
+	
 	/**
 	 * @return The style name
 	 */
@@ -929,7 +936,7 @@ var FeatureStyle = function(feature) {
 			this._name = removeUscore(this._name.replace(regex, this._feature.getTag(tagName)));
 			this._name = this._name.charAt(0).toUpperCase() + this._name.substr(1);
 		}
-
+		
 		return this._name;
 	};
 
@@ -943,16 +950,16 @@ var FeatureImages = function(feature) {
 //ATTRIBUTES
 	/** The image retrieved from image=* tag **/
 	this._img = undefined;
-
+	
 	/** The original image tag **/
 	this._imgTag = feature.getTag("image");
-
+	
 	/** The image from mapillary=* tag **/
 	this._mapillary = [];
 
 	/** The Flickr images **/
 	this._flickr = [];
-
+	
 //CONSTRUCTOR
 	if(this._imgTag != undefined) {
 		/*
@@ -961,7 +968,7 @@ var FeatureImages = function(feature) {
 		var regexUrl = /^(http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?\/[\w#!:.?+=&%@!\-\/]+\.(png|PNG|gif|GIF|jpg|JPG|jpeg|JPEG|bmp|BMP)$/;
 		var regexUrlNoProtocol = /^(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?\/[\w#!:.?+=&%@!\-\/]+\.(png|PNG|gif|GIF|jpg|JPG|jpeg|JPEG|bmp|BMP)$/;
 		var regexWiki = /^(File):.+\.(png|gif|jpg|jpeg|bmp)$/i;
-
+		
 		if(this._imgTag.match(regexUrl)) {
 			this._img = this._imgTag;
 		}
@@ -980,7 +987,7 @@ var FeatureImages = function(feature) {
 			this._img = null;
 		}
 	}
-
+	
 	/*
 	 * Read mapillary images
 	 */
@@ -993,7 +1000,7 @@ var FeatureImages = function(feature) {
 			this._mapillary.push({ key: k, val: ftTags[k] });
 		}
 	}
-
+	
 	//Clean tmp objects
 	ftTags = null;
 	k = null;
@@ -1006,7 +1013,7 @@ var FeatureImages = function(feature) {
 	 */
 	FeatureImages.prototype.get = function() {
 		var result = [];
-
+		
 		if(this._img != null && this._img != undefined) {
 			result.push({
 				url: this._img,
@@ -1016,12 +1023,12 @@ var FeatureImages = function(feature) {
 				date: 0
 			});
 		}
-
+		
 		var mapillaryData = controller.getMapillaryData();
 		var mapillaryImg = null;
 		for(var i=0; i < this._mapillary.length; i++) {
 			mapillaryImg = this._mapillary[i];
-
+			
 			if(mapillaryData.has(mapillaryImg.val) && !mapillaryData.isSpherical(mapillaryImg.val)) {
 				result.push({
 					url: 'https://d1cuyjsrcm0gby.cloudfront.net/'+mapillaryImg.val+'/thumb-2048.jpg',
@@ -1033,29 +1040,29 @@ var FeatureImages = function(feature) {
 				});
 			}
 		}
-
+		
 		if(this._flickr.length > 0) {
 			result = mergeArrays(result, this._flickr);
 		}
-
+		
 		result.sort(this._sortByDate);
 
 		return result;
 	};
-
+	
 	/**
 	 * @return Spherical images of the feature (as an array)
 	 */
 	FeatureImages.prototype.getSpherical = function() {
 		var result = [];
-
+		
 		var mapillaryData = controller.getMapillaryData();
 		var mapillaryImg, mapillaryMetadata, initDir, dir;
 		var directions = { "N": 0, "NE": 45, "E": 90, "SE": 135, "S": 180, "SW": 225, "W": 270, "NW": 315 };
-
+		
 		for(var i=0; i < this._mapillary.length; i++) {
 			mapillaryImg = this._mapillary[i];
-
+			
 			if(mapillaryData.has(mapillaryImg.val) && mapillaryData.isSpherical(mapillaryImg.val)) {
 				mapillaryMetadata = mapillaryImg.key.split(':');
 				initDir = undefined;
@@ -1065,7 +1072,7 @@ var FeatureImages = function(feature) {
 						initDir = dir;
 					}
 				}
-
+				
 				result.push({
 					url: 'https://d1cuyjsrcm0gby.cloudfront.net/'+mapillaryImg.val+'/thumb-2048.jpg',
 					source: "Mapillary",
@@ -1078,18 +1085,18 @@ var FeatureImages = function(feature) {
 				});
 			}
 		}
-
+		
 		result.sort(this._sortByDate);
-
+		
 		return result;
 	};
-
+	
 	/**
 	 * @return The images status as an object { source => status }
 	 */
 	FeatureImages.prototype.getStatus = function() {
 		var status = {};
-
+		
 		//Web image
 		if(this._img === null) {
 			status.web = "bad";
@@ -1100,7 +1107,7 @@ var FeatureImages = function(feature) {
 		else {
 			status.web = "ok";
 		}
-
+		
 		//Mapillary
 		var mapillaryData = controller.getMapillaryData();
 		if(this._mapillary.length == 0) {
@@ -1109,37 +1116,37 @@ var FeatureImages = function(feature) {
 		else {
 			var isMapillaryOK = true;
 			var i = 0;
-
+			
 			while(isMapillaryOK && i < this._mapillary.length) {
 				if(!mapillaryData.has(this._mapillary[i].val)) {
 					isMapillaryOK = false;
 				}
 				i++;
 			}
-
+			
 			status.mapillary = (isMapillaryOK) ? "ok" : "bad";
 		}
-
+		
 		//Flickr
 		status.flickr = (this._flickr.length > 0) ? "ok" : "missing";
-
+		
 		return status;
 	};
-
+	
 	/**
 	 * @return True if it has at least one valid image
 	 */
 	FeatureImages.prototype.hasValidImages = function() {
 		return this.get().length > 0;
 	};
-
+	
 	/**
 	 * @return True if it has a valid spherical image
 	 */
 	FeatureImages.prototype.hasValidSpherical = function() {
 		return this.getSpherical().length > 0;
 	};
-
+	
 	/**
 	 * @return The amount of valid images
 	 */
@@ -1194,20 +1201,20 @@ var Graph = function() {
 		var nodes = {};
 		avoidTransitions = avoidTransitions || [];
 		var avoidElevator = contains(avoidTransitions, "elevator");
-
+		
 		//Parse nodes
 		var currentElement = null, isElevator, type;
 		for(var i=0, l=data.elements.length; i < l; i++) {
 			currentElement = data.elements[i];
-
+			
 			if(currentElement.type == "node" && nodes[currentElement.id] == undefined) {
 				type = (this._isEntrance(currentElement.tags)) ? "door" : null;
 				nodes[currentElement.id] = { default: new Node(L.latLng(currentElement.lat, currentElement.lon), null, currentElement.id, type) };
-
+				
 				var levels = listLevels(currentElement.tags);
 				if(currentElement.tags != undefined && levels.length > 0) {
 					isElevator = this._isElevator(currentElement.tags);
-
+					
 					for(var j=0; j < levels.length; j++) {
 						nodes[currentElement.id][levels[j]] = new Node(nodes[currentElement.id].default.getLatLng(), levels[j], currentElement.id, type);
 						if(isElevator && !avoidElevator && j > 0) {
@@ -1234,24 +1241,24 @@ var Graph = function() {
 				}
 			}
 		}
-
+		
 		//Parse ways
 		var nodeId, node, nodePrevId, direction, transition, levels, level, levelPrev = null;
 		for(var i=0, l=data.elements.length; i < l; i++) {
 			currentElement = data.elements[i];
-
+			
 			if(this._isAccessible(currentElement.tags)) {
 				//Elevators as areas
 				if(currentElement.type == "way" && this._isElevator(currentElement.tags) && !avoidElevator) {
 					//Check levels
 					levels = listLevels(currentElement.tags);
 					elevatorEntries = {}; //TODO Handle multiple entries for a given level
-
+					
 					if(levels.length > 0) {
 						//Read each node
 						for(var j=0, lj=currentElement.nodes.length; j < lj; j++) {
 							nodeId = currentElement.nodes[j];
-
+							
 							//If levels were read on node
 							if(nodes[nodeId].default.getType() == "door" && Object.keys(nodes[nodeId]).length > 1) {
 								//Read each level
@@ -1262,15 +1269,15 @@ var Graph = function() {
 								}
 							}
 						}
-
+						
 						//Link elevator entries nodes
 						var prevEntry = null, currentEntry = null;
 						var sortedLevels = Object.keys(elevatorEntries);
 						sortedLevels.sort(sortNumberArray);
-
+						
 						for(var j=0, lj=sortedLevels.length; j < lj; j++) {
 							currentEntry = elevatorEntries[sortedLevels[j]];
-
+							
 							if(prevEntry != null) {
 								currentEntry.addNeighbour(
 									prevEntry,
@@ -1293,28 +1300,28 @@ var Graph = function() {
 									"elevator"
 								);
 							}
-
+							
 							prevEntry = currentEntry;
 						}
 					}
 				}
-
+				
 				//Walkable paths
 				else if(currentElement.type == "way" && this._isWalkable(currentElement.tags)) {
 					//Check transition
 					transition = this._transition(currentElement.tags);
-
+					
 					if(transition == null || !contains(avoidTransitions, transition)) {
 						//Direction of way
 						direction = this._direction(currentElement.tags);
 						levelPrev = null;
 						nodePrevId = null;
 						levels = listLevels(currentElement.tags);
-
+						
 						//Read each node
 						for(var j=0, lj=currentElement.nodes.length; j < lj; j++) {
 							nodeId = currentElement.nodes[j];
-
+							
 							//Check level on node
 							if(levels.length > 0) {
 								//Find node to use
@@ -1325,6 +1332,14 @@ var Graph = function() {
 								else if(levels.length == 1) {
 									level = levels[0];
 									//Create node on current level
+									if(!isNaN(level) && nodes[nodeId][level] == undefined) {
+										nodes[nodeId][level] = new Node(nodes[nodeId].default.getLatLng(), level, nodes[nodeId].default._name);
+									}
+								}
+								//Transition ways with several intermediate nodes
+								else if(levels.length == 2 && transition != null && j > 0 && j < lj-1) {
+									level = (levels[0] + levels[1]) / 2;
+									//Create node on intermediate level
 									if(!isNaN(level) && nodes[nodeId][level] == undefined) {
 										nodes[nodeId][level] = new Node(nodes[nodeId].default.getLatLng(), level, nodes[nodeId].default._name);
 									}
@@ -1341,7 +1356,7 @@ var Graph = function() {
 										}
 									}
 								}
-
+								
 								//Link node to previous one
 								if(j > 0 && nodes[nodeId][level] != undefined) {
 									if(levelPrev != null && nodes[nodePrevId][levelPrev] != undefined) {
@@ -1358,7 +1373,7 @@ var Graph = function() {
 												transition
 											);
 										}
-
+										
 										//Backward link
 										if(direction <= 0) {
 											nodes[nodeId][level].addNeighbour(
@@ -1374,7 +1389,7 @@ var Graph = function() {
 										}
 									}
 								}
-
+								
 								if(level != null) {
 									levelPrev = level;
 									nodePrevId = nodeId;
@@ -1385,7 +1400,7 @@ var Graph = function() {
 				}
 			}
 		}
-
+		
 		//Store final graph
 		this._graph = [];
 		for(var i in nodes) {
@@ -1396,35 +1411,35 @@ var Graph = function() {
 			}
 		}
 	};
-
+	
 	/**
 	 * @return True if the object can be walked on
 	 */
 	Graph.prototype._isWalkable = function(tags) {
 		return tags != null && tags.highway != undefined && tags.area == undefined;
 	};
-
+	
 	/**
 	 * @return True if the object is an entrance
 	 */
 	Graph.prototype._isEntrance = function(tags) {
 		return tags != null && (tags.entrance != undefined || tags.door != undefined);
 	};
-
+	
 	/**
 	 * @return True if the object is an elevator
 	 */
 	Graph.prototype._isElevator = function(tags) {
 		return tags != null && (tags.highway == "elevator" || tags.highway == "lift" || tags["buildingpart:verticalpassage"] == "elevator" || tags.indoor == "elevator");
 	};
-
+	
 	/**
 	 * @return True if the object can be accessed by everyone
 	 */
 	Graph.prototype._isAccessible = function(tags) {
 		return tags != null && (tags.access == undefined || tags.access == "yes" || tags.access == "permissive" || tags.access == "destination" || tags.access == "customers");
 	};
-
+	
 	/**
 	 * @return 0 if not oneway, 1 if oneway in the direction of the way, -1 if oneway in the opposite direction
 	 */
@@ -1454,7 +1469,7 @@ var Graph = function() {
 			return 0;
 		}
 	};
-
+	
 	/**
 	 * @return The kind of transition (elevator, escalator, stairs, null)
 	 */
@@ -1468,7 +1483,7 @@ var Graph = function() {
 		//Default
 		return null;
 	};
-
+	
 	/**
 	 * Initializes the graph from given nodes
 	 */
@@ -1488,14 +1503,14 @@ var Graph = function() {
 	Graph.prototype.findShortestPath = function(startPt, startLvl, endPt, endLvl) {
 		//Find start and end nodes near given coordinates
 		var start = this._findNearestNode(startPt, startLvl);
-		if(start == null) { throw Error("找不到起點"); }
-
+		if(start == null) { throw Error("No start node found"); }
+		
 		var end = this._findNearestNode(endPt, endLvl);
-		if(end == null) { throw Error("找不到終點"); }
-
+		if(end == null) { throw Error("No end node found"); }
+		
 		return this._process(start, end);
 	};
-
+	
 	/**
 	 * Finds the nearest node in graph from given coordinates at given level
 	 * @param coords The coordinates
@@ -1507,7 +1522,7 @@ var Graph = function() {
 		var minDist = null;
 		var current = null;
 		var currentDist = null;
-
+		
 		for(var i=0, l=this._graph.length; i < l; i++) {
 			current = this._graph[i];
 			if(current.getLevel() == lvl) {
@@ -1518,10 +1533,10 @@ var Graph = function() {
 				}
 			}
 		}
-
+		
 		return minDistNode;
 	};
-
+	
 	/**
 	 * The algorithm of A*
 	 * @param start The start node
@@ -1534,19 +1549,19 @@ var Graph = function() {
 		var cameFrom = new HashMap();
 		var costSoFar = new HashMap();
 		var current = null, neighbors = null, next = null, newCost = null, priority = null;
-
+		
 		//Add start node
 		frontier.queue({ node: start, priority: 0 });
 		cameFrom.set(start, null);
 		costSoFar.set(start, 0);
-
+		
 		//Find path
 		while(frontier.length > 0) {
 			current = frontier.dequeue().node;
-
+			
 			//Stop if current node is the final one
 			if(current.equals(end)) { break; }
-
+			
 			//Look for current node's neighbors
 			neighbors = current.getNeighbours();
 			for(var i=0, l=neighbors.length; i < l; i++) {
@@ -1560,24 +1575,24 @@ var Graph = function() {
 				}
 			}
 		}
-
+		
 		//Reconstruct path
 		current = end;
 		var path = [ current ];
-
+		
 		if(!cameFrom.has(end)) {
-			throw Error("找不到路徑");
+			throw Error("No route found");
 		}
-
+		
 		while(!current.equals(start)) {
 			current = cameFrom.get(current);
 			path.push(current);
 		}
 		path.reverse();
-
+		
 		return path;
 	};
-
+	
 	/**
 	 * The fly-distance between two nodes in graph
 	 * @param n1 The first node
@@ -1599,22 +1614,22 @@ var Node = function(latlng, level, name, type) {
 //ATTRIBUTES
 	/** The coordinates of the node **/
 	this._latLng = latlng;
-
+	
 	/** The level where the node can be found **/
 	this._level = level;
-
+	
 	/** The name of the node **/
 	this._name = name;
-
+	
 	/** The type of node (default = null, door) **/
 	this._type = type;
-
+	
 	/** The neighbours of the node **/
 	this._neighbours = [];
-
+	
 	/** The kind of transition between this node and neighbours (null = flat, stairs, escalator, elevator) **/
 	this._transition = [];
-
+	
 	/** The costs to go to a neighbour **/
 	this._costs = [];
 };
@@ -1626,28 +1641,28 @@ var Node = function(latlng, level, name, type) {
 	Node.prototype.getLatLng = function() {
 		return this._latLng;
 	};
-
+	
 	/**
 	 * @return The level
 	 */
 	Node.prototype.getLevel = function() {
 		return this._level;
 	};
-
+	
 	/**
 	 * @return The neighbours
 	 */
 	Node.prototype.getNeighbours = function() {
 		return this._neighbours;
 	};
-
+	
 	/**
 	 * @return The type (default is null)
 	 */
 	Node.prototype.getType = function() {
 		return this._type;
 	};
-
+	
 	/**
 	 * @return The cost to travel to the given node
 	 */
@@ -1655,7 +1670,7 @@ var Node = function(latlng, level, name, type) {
 		var id = this._neighbours.indexOf(n);
 		return this._costs[id];
 	};
-
+	
 	/**
 	 * @return The kind of transition between this node and the given one
 	 */
@@ -1663,7 +1678,7 @@ var Node = function(latlng, level, name, type) {
 		var id = this._neighbours.indexOf(n);
 		return this._transition[id];
 	};
-
+	
 	/**
 	 * @return True if the given node is the same as the current one
 	 */
